@@ -1,0 +1,20 @@
+info:
+  name: register
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{base_address}}/auth/register"
+  auth: inherit
+
+runtime:
+  variables:
+    - name: base_address
+      value: http://0.0.0.0:8007
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

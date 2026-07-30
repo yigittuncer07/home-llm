@@ -1,0 +1,19 @@
+info:
+  name: patch chat
+  type: http
+  seq: 4
+
+http:
+  method: PATCH
+  url: "{{base_url}}/chat/:chatId"
+  params:
+    - name: chatId
+      value: ""
+      type: path
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

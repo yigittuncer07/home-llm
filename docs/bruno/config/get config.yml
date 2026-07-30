@@ -1,0 +1,15 @@
+info:
+  name: get config
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{base_url}}/user/config"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
