@@ -12,3 +12,11 @@ class InvalidCredentialsError(AppException):
             detail="Incorrect email or password",
             log_message=log_message
         )
+
+class UserAlreadyExistsError(AppException):
+    def __init__(self, email: str, log_message: str = ""):
+        super().__init__(
+            status_code=400,
+            detail=f"User with email {email} already exists",
+            log_message=log_message
+        )
