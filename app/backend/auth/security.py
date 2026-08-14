@@ -1,7 +1,7 @@
 import bcrypt 
 import datetime
 import jwt
-from ..constants import JWT_KEY
+from constants import JWT_KEY
 
 def hash_password(password: str) -> str:
     

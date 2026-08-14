@@ -6,9 +6,9 @@ class AppException(Exception):
         self.log_message = log_message or detail
 
 class InvalidCredentialsError(AppException):
-    def __init__(self, username: str):
+    def __init__(self, email: str, log_message: str = ""):
         super().__init__(
             status_code=401,
-            detail="Incorrect username or password",
-            log_message=f"Failed login attempt for user: {username}"
+            detail="Incorrect email or password",
+            log_message=log_message
         )
