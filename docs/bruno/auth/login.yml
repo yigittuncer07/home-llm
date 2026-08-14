@@ -6,6 +6,13 @@ info:
 http:
   method: POST
   url: "{{base_address}}/auth/login"
+  body:
+    type: json
+    data: |-
+      {
+        "username": "test",
+        "password": "password"
+      }
   auth: inherit
 
 runtime:

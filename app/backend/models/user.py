@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String
 
-from app.backend.models.chat import Chat
-from app.backend.models.user_config import UserConfig
+from models.chat import Chat
+from models.user_config import UserConfig
 from .base import Base
 
 class User(Base):
