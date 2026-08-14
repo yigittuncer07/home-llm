@@ -16,3 +16,6 @@ class UserRepository:
 
     def get_by_username(self, username: str) -> User | None:
         return self.session.execute(select(User).where(User.username == username)).scalar_one_or_none()
+    
+    def get_by_email(self, email: str) -> User | None:
+        return self.session.execute(select(User).where(User.email == email)).scalar_one_or_none()
