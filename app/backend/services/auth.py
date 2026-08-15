@@ -2,24 +2,10 @@
 
 import logging
 
-from fastapi import HTTPException, Header
-from auth.security import validate_jwt_token, verify_password, generate_jwt_token, hash_password
+from auth.security import verify_password, generate_jwt_token, hash_password
 from repository.user import UserRepository
 from models.user import User
 from core.exceptions import InvalidCredentialsError, UserAlreadyExistsError
-
-def require_auth_token(authorization: str = Header(...)):
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Invalid token format")
-    
-    token_string = authorization.split(' ')[1]
-    
-    payload = validate_jwt_token(token_string)
-
-    if not payload:
-        raise HTTPException(status_code=401, detail="Token invalid or experid")
-    
-    return payload["sub"]
 
 async def authenticate_user(email: str, password: str, session) -> str:
     user_repository = UserRepository(session)

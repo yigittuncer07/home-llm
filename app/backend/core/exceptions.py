@@ -20,3 +20,11 @@ class UserAlreadyExistsError(AppException):
             detail=f"User with email {email} already exists",
             log_message=log_message
         )
+
+class InvalidTokenError(AppException):
+    def __init__(self, log_message: str = ""):
+        super().__init__(
+            status_code=401,
+            detail="Invalid or expired token",
+            log_message=log_message
+        )
