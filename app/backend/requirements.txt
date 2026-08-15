@@ -7,3 +7,7 @@ psycopg2-binary
 bcrypt
 PyJWT
 asyncpg
+pytest
+pytest-asyncio
+httpx
+aiosqlite
