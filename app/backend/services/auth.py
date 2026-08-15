@@ -21,9 +21,9 @@ def require_auth_token(authorization: str = Header(...)):
     
     return payload["sub"]
 
-def authenticate_user(email: str, password: str, session) -> str:
+async def authenticate_user(email: str, password: str, session) -> str:
     user_repository = UserRepository(session)
-    user = user_repository.get_by_email(email)
+    user = await user_repository.get_by_email(email)
     
     if not user:
         raise InvalidCredentialsError(email, log_message=f"User with email {email} not found")
@@ -33,14 +33,14 @@ def authenticate_user(email: str, password: str, session) -> str:
     
     return generate_jwt_token(user_id=str(user.id), role="user")
     
-def register_user(email: str, password: str, session) -> str:
+async def register_user(email: str, password: str, session) -> str:
     user_repository = UserRepository(session)
-    user = user_repository.get_by_email(email)
+    user = await user_repository.get_by_email(email)
     
     if user:
         raise UserAlreadyExistsError(email, log_message=f"Attempt to register existing user with email: {email} ID: {user.id}")
 
-    user = user_repository.add(
+    user = await user_repository.add(
         User(
             email=email,
             password_hash=hash_password(password)

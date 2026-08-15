@@ -1,14 +1,14 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from models.user_config import UserConfig
 
 class UserConfigRepository:
-    def __init__(self, session: Session):
+    def __init__(self, session: AsyncSession):
         self.session = session
 
-    def add(self, config: UserConfig) -> UserConfig:
+    async def add(self, config: UserConfig) -> UserConfig:
         self.session.add(config)
-        self.session.flush()
+        await self.session.flush()
         return config
 
-    def get_by_user_id(self, user_id: int) -> UserConfig | None:
-        return self.session.get(UserConfig, user_id)
+    async def get_by_user_id(self, user_id: int) -> UserConfig | None:
+        return await self.session.get(UserConfig, user_id)

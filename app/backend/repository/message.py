@@ -1,17 +1,17 @@
 from collections.abc import Sequence
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from models.message import Message
 
 class MessageRepository:
-    def __init__(self, session: Session):
+    def __init__(self, session: AsyncSession):
         self.session = session
 
-    def add(self, message: Message) -> Message:
+    async def add(self, message: Message) -> Message:
         self.session.add(message)
-        self.session.flush()
+        await self.session.flush()
         return message
 
-    def get_by_chat_id(self, chat_id: int) -> Sequence[Message]:
+    async def get_by_chat_id(self, chat_id: int) -> Sequence[Message]:
         stmt = select(Message).where(Message.chat_id == chat_id).order_by(Message.timestamp)
-        return self.session.scalars(stmt).all()
+        return (await self.session.scalars(stmt)).all()
