@@ -28,3 +28,19 @@ class InvalidTokenError(AppException):
             detail="Invalid or expired token",
             log_message=log_message
         )
+
+class ChatNotFoundError(AppException):
+    def __init__(self, chat_id: int, log_message: str = ""):
+        super().__init__(
+            status_code=404,
+            detail=f"Chat with ID {chat_id} not found",
+            log_message=log_message
+        )
+    
+class PermissionDeniedError(AppException):
+    def __init__(self, log_message: str = ""):
+        super().__init__(
+            status_code=403,
+            detail="Permission denied",
+            log_message=log_message
+        )

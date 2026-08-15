@@ -21,7 +21,7 @@ class Chat(Base):
     messages: Mapped[list["Message"]] = relationship(back_populates="chat", cascade="all, delete-orphan")
 
 
-# Pydantic model for the Chat response
+# pydantic model for the Chat response for the GET /chats endpoint
 class ChatItem(BaseModel):
     chat_id: int
     user_id: int
@@ -29,6 +29,13 @@ class ChatItem(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-# Wrapper model for the list
 class ChatsResponse(BaseModel):
     chats: list[ChatItem]
+    
+# pydantic model for the Chat response and request for the POST /chats endpoint
+class ChatCreateRequest(BaseModel):
+    title: str | None = None
+    
+# pydantic model for the DELETE /chats/{chat_id} endpoint
+class ChatDeleteResponse(BaseModel):
+    message: str
