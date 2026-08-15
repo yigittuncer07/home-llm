@@ -1,8 +1,11 @@
+from typing import TYPE_CHECKING
 from datetime import datetime
 from sqlalchemy import String, Text, ForeignKey, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from models.chat import Chat
+if TYPE_CHECKING:
+    from models.chat import Chat
+
 from models.base import Base
 
 class Message(Base):
