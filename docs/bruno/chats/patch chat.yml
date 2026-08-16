@@ -8,9 +8,17 @@ http:
   url: "{{base_url}}/chat/:chatId"
   params:
     - name: chatId
-      value: ""
+      value: "24"
       type: path
-  auth: inherit
+  body:
+    type: json
+    data: |-
+      {
+        "title": "updated title 1"
+      }
+  auth:
+    type: bearer
+    token: "{{bearer_token}}"
 
 settings:
   encodeUrl: true

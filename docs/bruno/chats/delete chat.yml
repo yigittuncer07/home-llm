@@ -5,10 +5,10 @@ info:
 
 http:
   method: DELETE
-  url: "{{base_url}}/chat/:chatId"
+  url: "{{base_url}}/chats/:chatId"
   params:
     - name: chatId
-      value: ""
+      value: "1"
       type: path
   auth: inherit
 

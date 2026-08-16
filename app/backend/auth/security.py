@@ -1,3 +1,5 @@
+import logging
+
 import bcrypt 
 import datetime
 import jwt
@@ -28,7 +30,9 @@ def validate_jwt_token(token: str) -> dict | None:
         decoded_payload = jwt.decode(token, JWT_KEY, algorithms=['HS256'])
         return decoded_payload
     except jwt.ExpiredSignatureError:
+        logging.warning("Token expired, failed to validate")
         return None
     except jwt.InvalidTokenError:
+        logging.warning("Token invalid, failed to validate")
         return None
 

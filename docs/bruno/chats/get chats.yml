@@ -6,7 +6,9 @@ info:
 http:
   method: GET
   url: "{{base_url}}/chats"
-  auth: inherit
+  auth:
+    type: bearer
+    token: "{{bearer_token}}"
 
 settings:
   encodeUrl: true

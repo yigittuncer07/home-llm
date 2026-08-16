@@ -2,6 +2,22 @@ opencollection: 1.0.0
 
 info:
   name: home-llm
+config:
+  proxy:
+    inherit: true
+    config:
+      protocol: http
+      hostname: ""
+      port: ""
+      auth:
+        username: ""
+        password: ""
+      bypassProxy: ""
+
+request:
+  auth:
+    type: bearer
+    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMyIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzg2ODEyODYyLCJleHAiOjE3ODY4MTQ2NjJ9.kgDvrvgfXy8wcEKdmQCtnx-qAEzL7p4XkXc61Do36EI
 bundled: false
 extensions:
   bruno:

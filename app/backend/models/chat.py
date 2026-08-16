@@ -39,3 +39,7 @@ class ChatCreateRequest(BaseModel):
 # pydantic model for the DELETE /chats/{chat_id} endpoint
 class ChatDeleteResponse(BaseModel):
     message: str
+
+# pydantic model for the PATCH /chats/{chat_id} endpoint
+class ChatUpdateRequest(BaseModel):
+    title: str

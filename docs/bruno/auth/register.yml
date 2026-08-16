@@ -6,6 +6,13 @@ info:
 http:
   method: POST
   url: "{{base_address}}/auth/register"
+  body:
+    type: json
+    data: |-
+      {
+        "email": "test2@test.com",
+        "password": "supersecretpassword"
+      }
   auth: inherit
 
 runtime:

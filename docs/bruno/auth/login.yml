@@ -5,13 +5,13 @@ info:
 
 http:
   method: POST
-  url: "{{base_address}}/auth/login"
+  url: "{{base_url}}/auth/login"
   body:
     type: json
     data: |-
       {
-        "username": "test",
-        "password": "password"
+        "email": "test3@test.com",
+        "password": "supersecretpassword"
       }
   auth: inherit
 

@@ -4,7 +4,7 @@ import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.chat import Chat, ChatDeleteResponse, ChatsResponse
+from models.chat import Chat, ChatDeleteResponse, ChatsResponse, ChatItem
 from repository.chat import ChatRepository
 from core.exceptions import ChatNotFoundError, PermissionDeniedError
 
@@ -46,3 +46,21 @@ async def delete_chat_by_id(chat_id: int, user_id: str, session: AsyncSession) -
     
     return ChatDeleteResponse.model_validate({"message": "Chat deleted successfully."})
     
+async def update_chat_title(chat_id: int, user_id: str, title: str, session: AsyncSession) -> ChatItem:
+    chat_repository = ChatRepository(session)
+    chat = await chat_repository.get_by_id(chat_id)
+
+    if not chat:
+        logging.warning(f"Chat with ID: {chat_id} not found for update.")
+        raise ChatNotFoundError(chat_id=chat_id, log_message=f"Chat with ID: {chat_id} not found for update.")
+
+    if chat.user_id != int(user_id):
+        logging.warning(f"User ID: {user_id} attempted to update chat ID: {chat_id} without permission.")
+        raise PermissionDeniedError(log_message=f"User ID: {user_id} attempted to update chat ID: {chat_id} without permission.")
+
+    chat.title = title
+    await session.commit()
+    await session.refresh(chat)
+    logging.info(f"Updated chat with ID: {chat_id} for user ID: {user_id} with new title: {title}")
+
+    return ChatItem.model_validate(chat)
