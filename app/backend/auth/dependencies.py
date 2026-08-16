@@ -1,4 +1,4 @@
-from fastapi import HTTPException, Header
+from fastapi import Header
 from auth.security import validate_jwt_token
 from core.exceptions import InvalidTokenError
 
