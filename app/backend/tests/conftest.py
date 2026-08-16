@@ -1,3 +1,5 @@
+#backend/tests/conftest.py
+
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
@@ -30,3 +32,12 @@ async def init_db():
 async def client():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
+    
+@pytest_asyncio.fixture
+async def auth_headers_factory(client):
+    async def _get_headers(email="test@example.com"):
+        await client.post("/auth/register", json={"email": email, "password": "supersecretpassword"})
+        resp = await client.post("/auth/login", json={"email": email, "password": "supersecretpassword"})
+        token = resp.json()["access_token"]
+        return {"Authorization": f"Bearer {token}"}
+    return _get_headers

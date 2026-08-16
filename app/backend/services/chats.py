@@ -33,12 +33,14 @@ async def delete_chat_by_id(chat_id: int, user_id: str, session: AsyncSession) -
     chat = await chat_repository.get_by_id(chat_id)
     
     if not chat:
-        logging.warning(f"Chat with ID: {chat_id} not found for deletion.")
-        raise ChatNotFoundError(chat_id=chat_id, log_message=f"Chat with ID: {chat_id} not found for deletion.")
+        log_message = f"Chat with ID: {chat_id} not found for deletion."
+        logging.warning(log_message)
+        raise ChatNotFoundError(chat_id=chat_id, log_message=log_message)
     
     if chat.user_id != int(user_id):
-        logging.warning(f"User ID: {user_id} attempted to delete chat ID: {chat_id} without permission.")
-        raise PermissionDeniedError(log_message=f"User ID: {user_id} attempted to delete chat ID: {chat_id} without permission.")
+        log_message = f"User ID: {user_id} attempted to delete chat ID: {chat_id} without permission."
+        logging.warning(log_message)
+        raise PermissionDeniedError(log_message=log_message)
     
     await session.delete(chat)
     await session.commit()
@@ -51,12 +53,14 @@ async def update_chat_title(chat_id: int, user_id: str, title: str, session: Asy
     chat = await chat_repository.get_by_id(chat_id)
 
     if not chat:
-        logging.warning(f"Chat with ID: {chat_id} not found for update.")
-        raise ChatNotFoundError(chat_id=chat_id, log_message=f"Chat with ID: {chat_id} not found for update.")
+        log_message = f"Chat with ID: {chat_id} not found for update."
+        logging.warning(log_message)
+        raise ChatNotFoundError(chat_id=chat_id, log_message=log_message)
 
     if chat.user_id != int(user_id):
-        logging.warning(f"User ID: {user_id} attempted to update chat ID: {chat_id} without permission.")
-        raise PermissionDeniedError(log_message=f"User ID: {user_id} attempted to update chat ID: {chat_id} without permission.")
+        log_message = f"User ID: {user_id} attempted to update chat ID: {chat_id} without permission."
+        logging.warning(log_message)
+        raise PermissionDeniedError(log_message=log_message)
 
     chat.title = title
     await session.commit()
