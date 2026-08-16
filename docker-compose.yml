@@ -26,6 +26,13 @@ services:
     ports:
       - "5432:5432"
 
+  redis:
+      image: redis:alpine
+      restart: always
+      ports:
+        - "6379:6379"
+      volumes:
+        - redisdata:/data
 
   nginx:
     image: nginx:alpine
@@ -39,3 +46,4 @@ services:
 
 volumes:
   pgdata:
+  redisdata:

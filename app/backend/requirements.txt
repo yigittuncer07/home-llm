@@ -11,3 +11,4 @@ pytest
 pytest-asyncio
 httpx
 aiosqlite
+redis
