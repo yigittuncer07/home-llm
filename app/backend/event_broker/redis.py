@@ -1,3 +1,4 @@
+#backend/event_broker/redis.py
 import json
 import redis.asyncio as redis
 from constants import REDIS_URL, TASK_QUEUE_NAME, CHAT_STREAM_CHANNEL_PREFIX
@@ -29,7 +30,7 @@ async def publish_stream_event(chat_id: int, token: str, is_finished: bool = Fal
     }
     await redis_client.publish(channel, json.dumps(event))
     
-async def get_chat_subscriber(chat_id: int):
+async def get_chat_subscriber(chat_id: int) -> tuple[redis.client.PubSub, str]:
     """returns a Redis pubsub subscriber for the given chat_id"""
     pubsub = redis_client.pubsub()
     channel = f"{CHAT_STREAM_CHANNEL_PREFIX}:{chat_id}"

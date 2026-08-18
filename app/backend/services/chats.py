@@ -1,9 +1,11 @@
 #backend/services/chats.py
 
+import json
 import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from event_broker.redis import get_chat_subscriber
 from models.chat import Chat, ChatDeleteResponse, ChatsResponse, ChatItem
 from repository.chat import ChatRepository
 from core.exceptions import ChatNotFoundError, PermissionDeniedError
@@ -15,7 +17,7 @@ async def get_chats_by_user_id(user_id: str, session: AsyncSession) -> ChatsResp
     
     return ChatsResponse.model_validate({"chats": chats})
 
-async def add_new_chat(user_id: str, title: str | None, session: AsyncSession) -> ChatsResponse:
+async def add_new_chat(user_id: str, title: str | None, session: AsyncSession) -> ChatItem:
     chat_repository = ChatRepository(session)
     if not title:
         title = "New Chat"
@@ -26,7 +28,7 @@ async def add_new_chat(user_id: str, title: str | None, session: AsyncSession) -
         )
     )
     logging.info(f"Created new chat with ID: {new_chat.chat_id} for user ID: {user_id} with title: {title}")
-    return ChatsResponse.model_validate({"chats": [new_chat]})
+    return ChatItem.model_validate(new_chat)
 
 async def delete_chat_by_id(chat_id: int, user_id: str, session: AsyncSession) -> ChatDeleteResponse:
     chat_repository = ChatRepository(session)
@@ -68,3 +70,20 @@ async def update_chat_title(chat_id: int, user_id: str, title: str, session: Asy
     logging.info(f"Updated chat with ID: {chat_id} for user ID: {user_id} with new title: {title}")
 
     return ChatItem.model_validate(chat)
+
+async def chat_stream_generator(chat_id: int):
+    pubsub, channel = await get_chat_subscriber(chat_id=chat_id)
+    await pubsub.subscribe(channel)
+    
+    try:
+        async for message in pubsub.listen():
+            if message['type'] == 'message':
+                data_str = message['data']
+                yield f"data: {data_str}\n\n"
+                
+                data_dict = json.loads(data_str)
+                if data_dict.get('is_finished'):
+                    break
+    finally:
+        await pubsub.unsubscribe(channel)
+        await pubsub.close()

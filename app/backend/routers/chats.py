@@ -1,11 +1,16 @@
 #backend/routers/chats.py
+import json
+from core.logger import logger
 from fastapi import APIRouter, Depends
+from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse
 from auth.dependencies import require_auth_token
-from services.chats import get_chats_by_user_id, add_new_chat, delete_chat_by_id, update_chat_title
+from services.chats import get_chats_by_user_id, add_new_chat, delete_chat_by_id, update_chat_title, chat_stream_generator
 from models.chat import ChatUpdateRequest
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
 from models.chat import ChatItem, ChatsResponse, ChatDeleteResponse
+from core.helpers import verify_chat_ownership
 
 router = APIRouter()
 
@@ -17,11 +22,11 @@ async def get_chats(
     chats = await get_chats_by_user_id(user_id=user_id, session=session)
     return chats
 
-@router.post("", response_model=ChatsResponse)
+@router.post("", response_model=ChatItem)
 async def create_chat(
     user_id: str = Depends(require_auth_token),
     session: AsyncSession = Depends(get_db)
-) -> ChatsResponse:
+) -> ChatItem:
     new_chat = await add_new_chat(user_id=user_id, title=None, session=session)
     return new_chat
 
@@ -43,3 +48,14 @@ async def update_chat(
 ) -> ChatItem:
     updated_chat = await update_chat_title(chat_id=chat_id, user_id=user_id, title=request.title, session=session)
     return updated_chat 
+
+@router.get("/{chat_id}/stream")
+async def stream_chat(
+    chat_id: int,
+    user_id: str = Depends(require_auth_token),
+    session: AsyncSession = Depends(get_db)
+):
+    await verify_chat_ownership(chat_id=chat_id, user_id=user_id, session=session)
+    logger.info(f"User {user_id} subscribed to chat {chat_id} stream.")
+    
+    return StreamingResponse(chat_stream_generator(chat_id=chat_id), media_type="text/event-stream")

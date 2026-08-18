@@ -1,3 +1,4 @@
+#backend/workers/vllm_request_worker.py
 import asyncio
 import json
 from database import SessionLocal  
@@ -27,7 +28,7 @@ async def process_task(task_data: dict):
     await asyncio.sleep(2)
 
     # Dummy response data
-    dummy_tokens = ["Here ", "is ", "your ", "simulated ", "response ", "from ", "the ", "worker!"]
+    dummy_tokens = ["test"] * 200
     full_response = ""
 
     # 2. Stream tokens via Redis Pub/Sub
