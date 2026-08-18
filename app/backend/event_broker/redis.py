@@ -14,10 +14,11 @@ async def enqueue_task(chat_id: int, user_id: int, message_id: int) -> None:
     }
     await redis_client.rpush(TASK_QUEUE_NAME, json.dumps(task_data))
     
-async def dequeue_task() -> dict | None:
-    task_json = await redis_client.blpop(TASK_QUEUE_NAME, timeout=0) # blocks until a task is available
+async def dequeue_task(timeout: int = 2) -> dict | None:
+    task_json = await redis_client.blpop(TASK_QUEUE_NAME, timeout=timeout) # blocks until a task is available
     if task_json:
-        return json.loads(task_json)
+        task_data = task_json[1]  # blpop returns a tuple (queue_name, task_data)
+        return json.loads(task_data)
     return None
     
 async def publish_stream_event(chat_id: int, token: str, is_finished: bool = False) -> None:
