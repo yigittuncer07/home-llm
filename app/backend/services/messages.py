@@ -7,19 +7,11 @@ from repository.message import MessageRepository
 from event_broker.redis import enqueue_task
 from core.logger import logger
 from core.exceptions import InternalServerError, ChatNotFoundError, PermissionDeniedError
-
+from core.helpers import verify_chat_ownership
 
 async def enqueue_message(request: SendMessageRequest, user_id: str, chat_id: int, session: AsyncSession) -> str:
     # verify chat ownership
-    chat_repository = ChatRepository(session)
-    chat = await chat_repository.get_by_id(chat_id)
-    
-    if not chat:
-        logger.error(f"User {user_id} attempted to send a message to non-existent chat {chat_id}")
-        raise ChatNotFoundError(chat_id=chat_id, log_message=f"Chat {chat_id} not found for user {user_id}")
-    elif chat.user_id != int(user_id):
-        logger.error(f"User {user_id} attempted to send a message to chat {chat_id} they do not own")
-        raise PermissionDeniedError(log_message=f"User {user_id} does not have permission to send messages to chat {chat_id}")
+    await verify_chat_ownership(chat_id, user_id, session)
         
     message_repository = MessageRepository(session)
 
@@ -55,15 +47,7 @@ async def enqueue_message(request: SendMessageRequest, user_id: str, chat_id: in
 
 async def get_chat_history_service(chat_id: int, user_id: str, session: AsyncSession) -> ChatHistoryResponse:
     # verify chat ownership
-    chat_repository = ChatRepository(session)
-    chat = await chat_repository.get_by_id(chat_id)
-    
-    if not chat:
-        logger.error(f"User {user_id} attempted to get chat history for non-existent chat {chat_id}")
-        raise ChatNotFoundError(chat_id=chat_id, log_message=f"Chat {chat_id} not found for user {user_id}")
-    elif chat.user_id != int(user_id):
-        logger.error(f"User {user_id} attempted to get chat history for chat {chat_id} they do not own")
-        raise PermissionDeniedError(log_message=f"User {user_id} does not have permission to access chat {chat_id}")
+    await verify_chat_ownership(chat_id, user_id, session)
     
     message_repository = MessageRepository(session)
     
