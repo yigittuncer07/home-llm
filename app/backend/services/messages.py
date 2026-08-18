@@ -1,3 +1,5 @@
+#backend/services/messages.py
+
 from models.message import Message, SendMessageRequest
 from sqlalchemy.ext.asyncio import AsyncSession
 from repository.message import MessageRepository
