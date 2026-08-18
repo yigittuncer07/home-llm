@@ -1,13 +1,26 @@
 #backend/services/messages.py
 
-from models.message import Message, SendMessageRequest
+from repository.chat import ChatRepository
+from models.message import Message, SendMessageRequest, ChatHistoryResponse, ChatMessage
 from sqlalchemy.ext.asyncio import AsyncSession
 from repository.message import MessageRepository
 from event_broker.redis import enqueue_task
 from core.logger import logger
-from core.exceptions import InternalServerError
+from core.exceptions import InternalServerError, ChatNotFoundError, PermissionDeniedError
 
-async def enqueue_message(request: SendMessageRequest, user_id: str, chat_id: int, session: AsyncSession):
+
+async def enqueue_message(request: SendMessageRequest, user_id: str, chat_id: int, session: AsyncSession) -> str:
+    # verify chat ownership
+    chat_repository = ChatRepository(session)
+    chat = await chat_repository.get_by_id(chat_id)
+    
+    if not chat:
+        logger.error(f"User {user_id} attempted to send a message to non-existent chat {chat_id}")
+        raise ChatNotFoundError(chat_id=chat_id, log_message=f"Chat {chat_id} not found for user {user_id}")
+    elif chat.user_id != int(user_id):
+        logger.error(f"User {user_id} attempted to send a message to chat {chat_id} they do not own")
+        raise PermissionDeniedError(log_message=f"User {user_id} does not have permission to send messages to chat {chat_id}")
+        
     message_repository = MessageRepository(session)
 
     new_message = Message(
@@ -39,3 +52,27 @@ async def enqueue_message(request: SendMessageRequest, user_id: str, chat_id: in
     logger.info(f"Task enqueued for message ID {message.message_id} in chat {chat_id} by user {user_id}")
     
     return "Message enqueued successfully"
+
+async def get_chat_history_service(chat_id: int, user_id: str, session: AsyncSession) -> ChatHistoryResponse:
+    # verify chat ownership
+    chat_repository = ChatRepository(session)
+    chat = await chat_repository.get_by_id(chat_id)
+    
+    if not chat:
+        logger.error(f"User {user_id} attempted to get chat history for non-existent chat {chat_id}")
+        raise ChatNotFoundError(chat_id=chat_id, log_message=f"Chat {chat_id} not found for user {user_id}")
+    elif chat.user_id != int(user_id):
+        logger.error(f"User {user_id} attempted to get chat history for chat {chat_id} they do not own")
+        raise PermissionDeniedError(log_message=f"User {user_id} does not have permission to access chat {chat_id}")
+    
+    message_repository = MessageRepository(session)
+    
+    try:
+        messages = await message_repository.get_by_chat_id(chat_id)
+    except Exception as e:
+        logger.error(f"Failed to retrieve chat history from database for chat {chat_id} by user {user_id}: {e}")
+        raise InternalServerError(log_message=str(e)) from e
+    
+    logger.info(f"Retrieved chat history for chat {chat_id} by user {user_id} with {len(messages)} messages")
+    
+    return ChatHistoryResponse(chat_id=chat_id, messages=[ChatMessage.model_validate(message) for message in messages])

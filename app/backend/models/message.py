@@ -1,7 +1,7 @@
 #backend/models/message.py
 
 from typing import TYPE_CHECKING
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 from sqlalchemy import String, Text, ForeignKey, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -29,3 +29,18 @@ class Message(Base):
 class SendMessageRequest(BaseModel):
     prompt: str
     model: str
+
+class ChatMessage(BaseModel):
+    message_id: int
+    chat_id: int
+    model: str
+    tokens: int | None
+    role: str
+    content: str
+    timestamp: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+class ChatHistoryResponse(BaseModel):
+    chat_id: int
+    messages: list[ChatMessage]
