@@ -44,3 +44,11 @@ class PermissionDeniedError(AppException):
             detail="Permission denied",
             log_message=log_message
         )
+
+class InternalServerError(AppException):
+    def __init__(self, log_message: str = ""):
+        super().__init__(
+            status_code=500,
+            detail="Internal server error",
+            log_message=log_message
+        )

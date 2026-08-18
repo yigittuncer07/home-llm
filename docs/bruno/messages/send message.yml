@@ -4,13 +4,22 @@ info:
   seq: 2
 
 http:
-  method: GET
+  method: POST
   url: "{{base_url}}/chats/:chatId/messages"
   params:
     - name: chatId
-      value: ""
+      value: "21"
       type: path
-  auth: inherit
+  body:
+    type: json
+    data: |-
+      {
+        "model": "qwen",
+        "prompt": "what is the meaning of life"
+      }
+  auth:
+    type: bearer
+    token: "{{bearer_token}}"
 
 settings:
   encodeUrl: true

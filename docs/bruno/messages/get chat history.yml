@@ -8,7 +8,7 @@ http:
   url: "{{base_url}}/chats/:chatId/messages"
   params:
     - name: chatId
-      value: ""
+      value: "22"
       type: path
   auth: inherit
 
