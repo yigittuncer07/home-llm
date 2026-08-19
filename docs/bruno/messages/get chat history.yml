@@ -6,9 +6,6 @@ info:
 http:
   method: GET
   url: "{{base_url}}/chats/:chatId/messages"
-  headers:
-    - name: Accept
-      value: text/event-stream
   params:
     - name: chatId
       value: "21"

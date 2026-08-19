@@ -52,3 +52,33 @@ class InternalServerError(AppException):
             detail="Internal server error",
             log_message=log_message
         )
+
+class LLMAPIError(AppException):
+    """Raised when the LLM API responds with an HTTP error status."""
+    def __init__(self, chat_id: int, api_status_code: int, api_error_body: str, log_message: str = ""):
+        self.chat_id = chat_id
+        self.api_status_code = api_status_code
+        self.api_error_body = api_error_body
+        super().__init__(
+            status_code=502, 
+            detail="The language model service returned an error",
+            log_message=log_message or (
+                f"LLM API error for chat {chat_id}: "
+                f"upstream status {api_status_code}, body: {api_error_body}"
+            )
+        )
+
+
+class LLMConnectionError(AppException):
+    """Raised when the LLM API can't be reached at all (network/DNS/timeout)."""
+    def __init__(self, chat_id: int, original_error: Exception, log_message: str = ""):
+        self.chat_id = chat_id
+        self.original_error = original_error
+        super().__init__(
+            status_code=503,  
+            detail="Could not connect to the language model service",
+            log_message=log_message or (
+                f"Network error connecting to LLM API for chat {chat_id}: "
+                f"{type(original_error).__name__} - {original_error}"
+            )
+        )

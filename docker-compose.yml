@@ -44,6 +44,30 @@ services:
       - frontend
       - backend
 
+  vllm:
+    image: vllm/vllm-openai:latest
+    command: 
+      - --model
+      - Qwen/Qwen3.5-0.8B
+      - --max-model-len
+      - "2048"
+      - --gpu-memory-utilization
+      - "0.6"  
+      - --max-num-seqs
+      - "2"    
+    ports:
+      - "8001:8000"
+    volumes:
+      - model_cache:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+              
 volumes:
   pgdata:
   redisdata:
+  model_cache:
