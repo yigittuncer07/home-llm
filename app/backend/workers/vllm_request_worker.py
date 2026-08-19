@@ -1,49 +1,108 @@
 #backend/workers/vllm_request_worker.py
 import asyncio
 import json
+
+import httpx
+from repository.user_config import UserConfigRepository
 from database import SessionLocal  
 from models.message import Message
 from repository.message import MessageRepository
 from event_broker.redis import dequeue_task, publish_stream_event, redis_client
-from constants import TASK_QUEUE_NAME
+from constants import TASK_QUEUE_NAME, LLM_API_URL, SYSTEM_PROMPT, MAX_LLM_TOKENS
 from core.logger import logger
 
 
 DLQ_NAME = f"{TASK_QUEUE_NAME}_dlq"
 
 async def process_task(task_data: dict):
-    # TODO: Tie to actual VLLM
     # TODO: Add error handling and retries for VLLM processing, using priority queues or a dead-letter queue (DLQ) for failed tasks.
-    # TODO: Get user personal prefences and inject into prompt.
-    # TODO: Get a fixed system prompt from a configuration file
-    
     
     chat_id = task_data["chat_id"]
     user_id = task_data["user_id"]
     original_message_id = task_data["message_id"]
 
-    logger.info(f"Processing task for chat {chat_id}, user {user_id}")
+    # logger.info(f"Processing task for chat {chat_id}, user {user_id}")
 
-    # 1. Simulate LLM initialization/thinking time
-    await asyncio.sleep(2)
+    # send request to vllm
+    
+    async with SessionLocal() as session:
+        message_repo = MessageRepository(session)
+        user_config_repo = UserConfigRepository(session)
+        
+        # fetch chat history to build context
+        history = await message_repo.get_by_chat_id(chat_id)
+        user_config = await user_config_repo.get_by_user_id(user_id)
+        
+        dynamic_system_prompt = SYSTEM_PROMPT
+        
+        if user_config and user_config.personalized_prompt:
+            dynamic_system_prompt += f"\n\nUser Instructions:\n{user_config.personalized_prompt}"
+            
+        messages_payload = [
+            {"role": "system", "content": dynamic_system_prompt}
+        ]
+        
+        for m in history:
+            messages_payload.append({"role": m.role, "content": m.content})            
+            
+        requested_model = history[-1].model
+        
 
-    # Dummy response data
-    dummy_tokens = ["test"] * 200
     full_response = ""
+    token_count = 0
+    
+    payload = {
+        "model": requested_model,
+        "messages": messages_payload,
+        "stream": True,
+        "max_tokens": MAX_LLM_TOKENS
+    } 
 
-    # 2. Stream tokens via Redis Pub/Sub
-    for token in dummy_tokens:
-        full_response += token
-        await publish_stream_event(chat_id=chat_id, token=token, is_finished=False)
-        await asyncio.sleep(0.2)  # Simulate token generation delay
 
+    try:
+        async with httpx.AsyncClient(timeout=120) as client: 
+            async with client.stream("POST", LLM_API_URL, json=payload) as response:
+                
+                # Capture the actual error message from the API before raising
+                if response.status_code >= 400:
+                    await response.aread() # Read the error body
+                    api_error = response.text
+                    error_msg = f"API returned {response.status_code}: {api_error}"
+                    logger.error(f"LLM API Error for chat {chat_id}: {error_msg}")
+                    raise Exception(error_msg) # Pass the detailed message to the DLQ
+                
+                async for line in response.aiter_lines():
+                    if line.startswith("data: "):
+                        data = line[6:]
+                        if data == "[DONE]":
+                            break
+                        else:
+                            try:
+                                data_dict = json.loads(data)
+                                delta = data_dict["choices"][0].get("delta", {})
+                                content = delta.get("content", "")
+                                
+                                if content:
+                                    full_response += content
+                                    token_count += 1
+                                    await publish_stream_event(chat_id=chat_id, token=content, is_finished=False)
+                            except json.JSONDecodeError as e:
+                                # Include the raw data that failed to parse
+                                logger.error(f"JSON decode error for chat {chat_id}. Raw data: '{data}'. Error: {e}")
+                                
+    except httpx.RequestError as e:
+        # Catch connection issues (e.g., vLLM is offline, DNS failure, timeouts)
+        error_msg = f"Network error connecting to LLM API for chat {chat_id}: {type(e).__name__} - {e}"
+        logger.error(error_msg)
+        raise Exception(error_msg)
+    
     # 3. Finalize: Save assistant message to Database
     async with SessionLocal() as session:
         message_repo = MessageRepository(session)
         assistant_message = Message(
             chat_id=chat_id,
-            model="qwen",
-            tokens=len(dummy_tokens),
+            model=requested_model,
+            tokens=token_count,
             role="assistant",
             content=full_response,
             timestamp=None
