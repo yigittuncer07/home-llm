@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import auth, chats, user, messages
+from routers import auth, chats, user, messages, models
 from core.exceptions import AppException
 from core.handlers import app_exception_handler
 
@@ -18,6 +18,7 @@ app.add_exception_handler(AppException, app_exception_handler)
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(user.router, prefix="/user", tags=["user"])
 app.include_router(chats.router, prefix="/chats", tags=["chats"])
+app.include_router(models.router, prefix="/models", tags=["models"])
 app.include_router(messages.router, prefix="/chats/{chat_id}/messages", tags=["messages"])
 
 @app.get("/items/{item_id}")

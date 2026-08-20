@@ -2,6 +2,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String
 
 from models.chat import Chat
+from models.user_token_balance import UserTokenBalance
 from models.user_config import UserConfig
 from .base import Base
 
@@ -15,3 +16,4 @@ class User(Base):
     
     chats: Mapped[list["Chat"]] = relationship(cascade="all, delete-orphan")
     config: Mapped["UserConfig"] = relationship(cascade="all, delete-orphan")
+    token_balances: Mapped[list["UserTokenBalance"]] = relationship(cascade="all, delete-orphan")

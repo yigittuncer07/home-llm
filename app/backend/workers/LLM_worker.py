@@ -2,6 +2,7 @@ import asyncio
 import json
 
 from repository.user_config import UserConfigRepository
+from repository.user_token_balance import UserTokenBalanceRepository
 from database import SessionLocal  
 from models.message import Message
 from repository.message import MessageRepository
@@ -106,6 +107,8 @@ async def process_task(task_data: dict):
     if success:
         async with SessionLocal() as session:
             message_repo = MessageRepository(session)
+            token_repo = UserTokenBalanceRepository(session)
+            
             assistant_message = Message(
                 chat_id=chat_id,
                 model=requested_model,
@@ -115,6 +118,9 @@ async def process_task(task_data: dict):
                 timestamp=None
             )
             await message_repo.add(assistant_message)
+            
+            await token_repo.decrement_balance(user_id, requested_model, token_count)
+            
             await session.commit()
 
         await publish_stream_event(chat_id=chat_id, token="", is_finished=True)

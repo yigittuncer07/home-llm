@@ -7,12 +7,14 @@ from repository.message import MessageRepository
 from event_broker.redis import enqueue_task
 from core.logger import logger
 from core.exceptions import InternalServerError, ChatNotFoundError, PermissionDeniedError
-from core.helpers import verify_chat_ownership
+from core.helpers import ensure_positive_balance, verify_chat_ownership
 
 async def enqueue_message(request: SendMessageRequest, user_id: str, chat_id: int, session: AsyncSession) -> str:
     # verify chat ownership
     await verify_chat_ownership(chat_id, user_id, session)
         
+    await ensure_positive_balance(int(user_id), request.model, session)
+
     message_repository = MessageRepository(session)
 
     new_message = Message(

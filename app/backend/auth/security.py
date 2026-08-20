@@ -14,7 +14,7 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, hash: bytes) -> bool:
     return bcrypt.checkpw(password.encode('utf-8'), hash)
 
-def generate_jwt_token(user_id: str, role: str, expire: int = 30) -> str:
+def generate_jwt_token(user_id: str, role: str, expire: int = 1440) -> str:
     payload = {
         'sub': user_id,
         'role': role, 
