@@ -8,7 +8,7 @@ from database import SessionLocal
 from models.message import Message
 from repository.message import MessageRepository
 from event_broker.redis import dequeue_task, publish_stream_event, redis_client
-from constants import TASK_QUEUE_NAME, LLM_API_URL, SYSTEM_PROMPT, MAX_LLM_TOKENS
+from constants import TASK_QUEUE_NAME, LLM_API_URL, TOKENIZE_URL, SYSTEM_PROMPT, MAX_LLM_TOKENS
 from core.logger import logger
 from core.exceptions import LLMAPIError, LLMConnectionError, AppException
 
@@ -38,6 +38,11 @@ async def process_task(task_data: dict):
 
     full_response = ""
     token_count = 0
+    
+    # truncate messages if they exceed the model's token limit
+    logger.info(f"Truncating messages for chat {chat_id} to fit model {requested_model}'s token limit. Before truncation, total messages: {len(messages_payload)}")
+    messages_payload = await truncate_messages(messages_payload, requested_model, chat_id)
+    logger.info(f"Truncated messages for chat {chat_id}. Total messages after truncation: {len(messages_payload)}")
 
     payload = {
         "model": requested_model,
@@ -46,6 +51,7 @@ async def process_task(task_data: dict):
         "max_tokens": MAX_LLM_TOKENS
     }
 
+    # sse streaming loop to redis
     try:
         async with httpx.AsyncClient(timeout=120) as client:
             async with client.stream("POST", LLM_API_URL, json=payload) as response:
@@ -107,7 +113,39 @@ def parse_sse_line(line: str, chat_id: int) -> str | None:
     except json.JSONDecodeError as e:
         logger.error(f"JSON decode error for chat {chat_id}. Raw data: '{data}'. Error: {e}")
         return None
+    
+async def get_token_count(messages: list[dict], model: str, chat_id: int) -> tuple[int, int]:
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            TOKENIZE_URL,
+            json={"model": model, "messages": messages}
+        )
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("count"), data.get("max_model_len")
+        else:
+            raise LLMConnectionError(
+                chat_id=chat_id, 
+                original_error=Exception(f"Tokenize request failed with status {response.status_code}")
+            )
 
+async def truncate_messages(messages: list[dict], model: str, chat_id: int) -> list[dict]:
+    while len(messages) > 1:
+        total_tokens, max_model_len = await get_token_count(messages, model, chat_id)
+        
+        if total_tokens <= (max_model_len - MAX_LLM_TOKENS):
+            break
+            
+        # Drop the oldest user/assistant pair (indices 1 and 2) to preserve chat structure.
+        # If there are at least 3 items (system + user + assistant):
+        if len(messages) >= 3:
+            messages.pop(1) # Drop oldest user message
+            messages.pop(1) # Drop corresponding assistant message (which shifted to index 1)
+        else:
+            # Fallback if only 1 message remains after system prompt but it still exceeds limits
+            messages.pop(1)
+        
+    return messages
 
 async def main():
     logger.info("Worker started, waiting for tasks...")
@@ -124,7 +162,7 @@ async def main():
                     task["error_code"] = e.status_code
                     await redis_client.rpush(DLQ_NAME, json.dumps(task))
                 except Exception as e:
-                    logger.error(f"Unexpected error for chat {task.get('chat_id')}: {e}. Moving to DLQ.")
+                    logger.exception(f"Unexpected error for chat {task.get('chat_id')}. Moving to DLQ.")
                     task["error"] = str(e)
                     await redis_client.rpush(DLQ_NAME, json.dumps(task))
 

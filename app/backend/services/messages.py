@@ -25,6 +25,7 @@ async def enqueue_message(request: SendMessageRequest, user_id: str, chat_id: in
     )
     try:
         message = await message_repository.add(new_message)
+        await session.commit() # to prevent race conditions
     except Exception as e:
         logger.error(f"Failed to write to database for chat {chat_id} by user {user_id}: {e}")
         raise InternalServerError(log_message=str(e)) from e

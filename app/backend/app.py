@@ -1,9 +1,19 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from routers import auth, chats, user, messages
 from core.exceptions import AppException
 from core.handlers import app_exception_handler
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.add_exception_handler(AppException, app_exception_handler)
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(user.router, prefix="/user", tags=["user"])
