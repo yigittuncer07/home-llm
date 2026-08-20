@@ -1,12 +1,20 @@
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
+from core.exceptions import AppException
+from core.helpers import ensure_positive_balance as real_ensure_positive_balance
 
 pytestmark = pytest.mark.asyncio
 
-# Mock Redis task queueing to avoid requiring a live Redis server during tests
+# Mock Redis task queueing
 @pytest.fixture(autouse=True)
 def mock_enqueue_task():
     with patch("services.messages.enqueue_task") as mock:
+        yield mock
+
+# globally mock the token check to allow standard tests to pass
+@pytest.fixture(autouse=True)
+def mock_token_check():
+    with patch("services.messages.ensure_positive_balance", new_callable=AsyncMock) as mock:
         yield mock
 
 async def test_send_message(client, auth_headers_factory):
@@ -20,6 +28,21 @@ async def test_send_message(client, auth_headers_factory):
     
     assert response.status_code == 202
     assert response.json()["message"] == "Message enqueued successfully"
+
+async def test_send_message_insufficient_tokens(client, auth_headers_factory):
+    headers = await auth_headers_factory("msg_tokens@example.com")
+    
+    chat_resp = await client.post("/chats", headers=headers)
+    chat_id = chat_resp.json()["chat_id"]
+    
+    # overwrite the global mock with the real function to hit the test database
+    # this works because default token balance for new users is 0, so the test should trigger the 402 error
+    with patch("services.messages.ensure_positive_balance", side_effect=real_ensure_positive_balance):
+        payload = {"prompt": "Hello", "model": "qwen"}
+        response = await client.post(f"/chats/{chat_id}/messages", headers=headers, json=payload)
+        
+        assert response.status_code == 402
+        assert "Token balance depleted" in response.text
 
 async def test_get_chat_history(client, auth_headers_factory):
     headers = await auth_headers_factory("msg2@example.com")
