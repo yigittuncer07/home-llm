@@ -1,6 +1,71 @@
-# Getting Started with Create React App
+# Home LLM — Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+React 18 + TypeScript + Vite frontend for the Home LLM chat application.
+
+## Prerequisites
+
+- Node.js 20+
+- A running instance of the [backend](../backend) at the URL configured in `.env`
+
+## Setup
+
+```bash
+cp .env.example .env
+# Edit .env — set VITE_API_BASE_URL and VITE_DEFAULT_MODEL
+npm install
+```
+
+## Development
+
+```bash
+npm run dev
+# Opens at http://localhost:3000
+```
+
+## Production build
+
+```bash
+npm run build
+# Output in dist/
+npm run preview   # preview the production build locally
+```
+
+## Docker
+
+```bash
+docker build -t home-llm-frontend .
+docker run -p 80:80 home-llm-frontend
+```
+
+Or use the root `docker-compose.yml`.
+
+## Environment variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `VITE_API_BASE_URL` | `http://localhost:8000` | Backend base URL |
+| `VITE_DEFAULT_MODEL` | `llama3.1` | Default LLM model name sent with each message |
+
+## Tech stack
+
+- **Vite** — build tool
+- **React 18 + TypeScript** — UI
+- **React Router v6** — routing (`/login`, `/register`, `/`, `/chat/:chatId`, `/settings`)
+- **Zustand** — global state (auth token, chat list, streaming state)
+- **TailwindCSS** — styling with dark mode (`class` strategy)
+- **Axios** — API client with `Authorization` header injection and 401 redirect
+- **react-markdown + remark-gfm + rehype-highlight** — Markdown + syntax highlighting in assistant messages
+- **Lucide React** — icon set
+- **Sonner** — toast notifications
+
+## Streaming
+
+The assistant reply arrives via **Server-Sent Events** (SSE) from `GET /chats/{id}/stream`.  
+Because the native `EventSource` API cannot send `Authorization` headers, the app uses a
+`fetch`-based SSE reader (`src/api/stream.ts`) that passes the JWT as a normal request header.  
+All SSE parsing logic is isolated in `parseStreamEvent()` — a one-line change there handles any
+backend payload format change.
+
 
 ## Available Scripts
 
