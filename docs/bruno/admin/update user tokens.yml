@@ -1,20 +1,21 @@
 info:
-  name: patch chat
+  name: update user tokens
   type: http
   seq: 4
 
 http:
   method: PATCH
-  url: "{{base_url}}/chats/:chatId"
+  url: "{{base_url}}/admin/users/:userId/tokens"
   params:
-    - name: chatId
-      value: "48"
+    - name: userId
+      value: "25"
       type: path
   body:
     type: json
     data: |-
       {
-        "title": "test chat"
+        "model_name": "Qwen/Qwen3.5-0.8B",
+        "balance": "5000"
       }
   auth:
     type: bearer

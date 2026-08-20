@@ -1,7 +1,9 @@
+#/backend/models/user_token_balance.py
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import String, Integer, ForeignKey, UniqueConstraint
-from .base import Base
 
+from .base import Base
+from pydantic import BaseModel
 
 class UserTokenBalance(Base):
     __tablename__ = "user_token_balances"
@@ -14,3 +16,18 @@ class UserTokenBalance(Base):
     __table_args__ = (
         UniqueConstraint('userId', 'model_name', name='uq_user_model_balance'),
     )
+
+    
+# pydantic models
+
+class TokenUpdateRequest(BaseModel):
+    model_name: str
+    balance: int
+
+class TokenBalanceResponse(BaseModel):
+    id: int
+    userId: int
+    model_name: str
+    balance: int
+
+    model_config = {"from_attributes": True}

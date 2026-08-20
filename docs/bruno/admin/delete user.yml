@@ -8,7 +8,7 @@ http:
   url: "{{base_url}}/admin/users/:userId"
   params:
     - name: userId
-      value: "47"
+      value: "27"
       type: path
   auth:
     type: bearer

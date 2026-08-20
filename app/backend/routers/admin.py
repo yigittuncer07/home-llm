@@ -5,7 +5,8 @@ from auth.dependencies import require_admin_token
 from database import get_db
 from models.user import UserResponse
 from models.auth import RegisterRequest
-from services.admin import get_all_users_service, delete_user_service, register_user_service
+from services.admin import get_all_users_service, delete_user_service, register_user_service, set_user_tokens_service, get_user_details_service
+from models.user_token_balance import TokenUpdateRequest, TokenBalanceResponse
 
 router = APIRouter()
 
@@ -23,3 +24,17 @@ async def delete_user(user_id: int, db: AsyncSession = Depends(get_db), _: str =
 async def register_user(request: RegisterRequest, db: AsyncSession = Depends(get_db), _: str = Depends(require_admin_token)) -> UserResponse:
     result = await register_user_service(request.email, request.password, db)
     return result
+
+@router.patch('/users/{user_id}/tokens', response_model=TokenBalanceResponse)
+async def update_user_token_balance(user_id: int, request: TokenUpdateRequest, db: AsyncSession = Depends(get_db), _: str = Depends(require_admin_token)) -> TokenBalanceResponse:
+    updated_balance = await set_user_tokens_service(user_id, request.model_name, request.balance, db)
+    return updated_balance
+
+@router.get('/users/{user_id}', response_model=UserResponse)
+async def get_user_details(
+    user_id: int, 
+    db: AsyncSession = Depends(get_db), 
+    _: str = Depends(require_admin_token)
+) -> UserResponse:
+    user_data = await get_user_details_service(user_id, db)
+    return UserResponse.model_validate(user_data)

@@ -1,8 +1,9 @@
+#/backend/models/user.py
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String
 
 from models.chat import Chat
-from models.user_token_balance import UserTokenBalance
+from models.user_token_balance import TokenBalanceResponse, UserTokenBalance
 from models.user_config import UserConfig
 from .base import Base
 from pydantic import BaseModel
@@ -19,7 +20,7 @@ class User(Base):
     
     chats: Mapped[list["Chat"]] = relationship(cascade="all, delete-orphan")
     config: Mapped["UserConfig"] = relationship(cascade="all, delete-orphan")
-    token_balances: Mapped[list["UserTokenBalance"]] = relationship(cascade="all, delete-orphan")
+    token_balances: Mapped[list["UserTokenBalance"]] = relationship(cascade="all, delete-orphan", lazy="selectin")
     is_admin: Mapped[bool] = mapped_column(default=False, server_default='false') # Add this line
 
 
@@ -30,6 +31,7 @@ class UserResponse(BaseModel):
     username: str | None
     email: str
     is_admin: bool
+    token_balances: list[TokenBalanceResponse] = []
 
     model_config = {"from_attributes": True}
 

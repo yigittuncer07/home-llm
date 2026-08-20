@@ -1,15 +1,11 @@
 info:
-  name: get chat history
+  name: get users
   type: http
   seq: 1
 
 http:
   method: GET
-  url: "{{base_url}}/chats/:chatId/messages"
-  params:
-    - name: chatId
-      value: "48"
-      type: path
+  url: "{{base_url}}/admin/users"
   auth:
     type: bearer
     token: "{{bearer_token}}"

@@ -1,19 +1,13 @@
 #backend/services/admin.py
 
-import logging
-
 from sqlalchemy.ext.asyncio import AsyncSession
 from auth.security import hash_password
 from repository.user import UserRepository, User
 from models.user import UserResponse
 from core.exceptions import UserAlreadyExistsError, UserNotFoundError
-
-async def get_all_users_service(session: AsyncSession) -> list[UserResponse]:
-    user_repository = UserRepository(session)
-    users = await user_repository.get_all()
-    logging.info(f"Retrieved {len(users)} users from the database.")
-    
-    return [UserResponse.model_validate(user) for user in users]
+from repository.user_token_balance import UserTokenBalanceRepository
+from models.user_token_balance import TokenBalanceResponse
+from core.logger import logger
 
 async def delete_user_service(session: AsyncSession, user_id: int) -> UserResponse:
     user_repository = UserRepository(session)
@@ -21,11 +15,11 @@ async def delete_user_service(session: AsyncSession, user_id: int) -> UserRespon
     
     if not user:
         log_message = f"Attempted to delete non-existent user with id {user_id}."
-        logging.warning(log_message)
+        logger.warning(log_message)
         raise UserNotFoundError(user_id, log_message=log_message)
     
     await user_repository.delete(user)
-    logging.info(f"Deleted user with id {user_id}.")
+    logger.info(f"Deleted user with id {user_id}.")
     
     return UserResponse.model_validate(user)
 
@@ -42,6 +36,40 @@ async def register_user_service(email: str, password: str, session: AsyncSession
             password_hash=hash_password(password)
         )
     )
-    logging.info(f"User registered with email: {email} ID: {user.id}")
+    logger.info(f"User registered with email: {email} ID: {user.id}")
 
+    return UserResponse.model_validate(user)
+
+
+async def set_user_tokens_service(user_id: int, model_name: str, balance: int, session: AsyncSession) -> TokenBalanceResponse:
+    user_repository = UserRepository(session)
+    user = await user_repository.get_by_id(user_id)
+    
+    if not user:
+        raise UserNotFoundError(user_id, log_message=f"Cannot set tokens. User {user_id} not found.")
+
+    token_repo = UserTokenBalanceRepository(session)
+    record = await token_repo.set_balance(user_id, model_name, balance)
+    
+    logger.info(f"Set token balance for user {user_id} on model {model_name} to {balance}.")
+    
+    return TokenBalanceResponse.model_validate(record)
+
+async def get_all_users_service(session: AsyncSession) -> list[UserResponse]:
+    user_repository = UserRepository(session)
+    users = await user_repository.get_all()
+    logger.info(f"Retrieved {len(users)} users from the database.")
+    
+    return [UserResponse.model_validate(user) for user in users]
+
+async def get_user_details_service(user_id: int, session: AsyncSession) -> UserResponse:
+    user_repository = UserRepository(session)
+    user = await user_repository.get_by_id(user_id)
+    
+    if not user:
+        log_message = f"Attempted to fetch details for non-existent user with id {user_id}."
+        logger.warning(log_message)
+        raise UserNotFoundError(user_id, log_message=log_message)
+
+    logger.info(f"Retrieved details for user {user_id}.")
     return UserResponse.model_validate(user)
