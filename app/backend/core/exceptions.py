@@ -86,3 +86,11 @@ class LLMConnectionError(AppException):
                 f"{type(original_error).__name__} - {original_error}"
             )
         )
+
+class UserNotFoundError(AppException):
+    def __init__(self, user_id: int, log_message: str = ""):
+        super().__init__(
+            status_code=404,
+            detail=f"User with ID {user_id} not found",
+            log_message=log_message
+        )

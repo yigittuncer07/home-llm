@@ -8,7 +8,7 @@ http:
   url: "{{base_url}}/chats/:chatId/messages"
   params:
     - name: chatId
-      value: "34"
+      value: "43"
       type: path
   body:
     type: json

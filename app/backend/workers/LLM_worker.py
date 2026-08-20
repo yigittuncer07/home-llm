@@ -45,12 +45,12 @@ async def process_task(task_data: dict):
 
     model_config = settings.models_config.get(requested_model)
     if not model_config:
+        logger.error(f"Model {requested_model} is not supported or not configured for chat {chat_id}.")
         raise AppException(
             status_code=400,
             detail=f"Model {requested_model} is not supported or not configured.",
             log_message=f"Model {requested_model} is not supported or not configured."
         )
-        logger.error(f"Model {requested_model} is not supported or not configured for chat {chat_id}.")
 
     model_config["chat_id"] = chat_id
     provider_type = model_config["provider_type"]

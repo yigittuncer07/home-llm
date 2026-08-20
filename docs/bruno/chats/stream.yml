@@ -11,7 +11,7 @@ http:
       value: text/event-stream
   params:
     - name: chatId
-      value: "21"
+      value: "34"
       type: path
   auth:
     type: bearer

@@ -32,3 +32,11 @@ class UserResponse(BaseModel):
     is_admin: bool
 
     model_config = {"from_attributes": True}
+
+# class UserCreate(BaseModel):
+#     username: str | None
+#     email: str
+#     password: str
+#     is_admin: bool = False
+
+#     model_config = {"from_attributes": True}
