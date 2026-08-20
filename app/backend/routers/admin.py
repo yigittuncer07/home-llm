@@ -4,7 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from auth.dependencies import require_admin_token
 from database import get_db
 from models.user import UserResponse
-from services.admin import get_all_users_service, delete_user_service
+from models.auth import RegisterRequest
+from services.admin import get_all_users_service, delete_user_service, register_user_service
 
 router = APIRouter()
 
@@ -17,3 +18,8 @@ async def get_users(db: AsyncSession = Depends(get_db), _: str = Depends(require
 async def delete_user(user_id: int, db: AsyncSession = Depends(get_db), _: str = Depends(require_admin_token)) -> UserResponse:
     deleted_user = await delete_user_service(db, user_id)
     return deleted_user
+
+@router.post('/users', response_model=UserResponse)
+async def register_user(request: RegisterRequest, db: AsyncSession = Depends(get_db), _: str = Depends(require_admin_token)) -> UserResponse:
+    result = await register_user_service(request.email, request.password, db)
+    return result

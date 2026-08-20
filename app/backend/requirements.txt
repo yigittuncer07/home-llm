@@ -13,3 +13,4 @@ httpx
 aiosqlite
 redis
 pydantic-settings
+alembic

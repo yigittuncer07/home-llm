@@ -3,9 +3,10 @@
 import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from repository.user import UserRepository
-from core.exceptions import UserNotFoundError
+from auth.security import hash_password
+from repository.user import UserRepository, User
 from models.user import UserResponse
+from core.exceptions import UserAlreadyExistsError, UserNotFoundError
 
 async def get_all_users_service(session: AsyncSession) -> list[UserResponse]:
     user_repository = UserRepository(session)
@@ -26,4 +27,21 @@ async def delete_user_service(session: AsyncSession, user_id: int) -> UserRespon
     await user_repository.delete(user)
     logging.info(f"Deleted user with id {user_id}.")
     
+    return UserResponse.model_validate(user)
+
+async def register_user_service(email: str, password: str, session: AsyncSession) -> UserResponse:
+    user_repository = UserRepository(session)
+    user = await user_repository.get_by_email(email)
+    
+    if user:
+        raise UserAlreadyExistsError(email, log_message=f"Attempt to register existing user with email: {email} ID: {user.id}")
+
+    user = await user_repository.add(
+        User(
+            email=email,
+            password_hash=hash_password(password)
+        )
+    )
+    logging.info(f"User registered with email: {email} ID: {user.id}")
+
     return UserResponse.model_validate(user)
