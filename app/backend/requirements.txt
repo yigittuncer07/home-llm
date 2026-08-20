@@ -12,3 +12,4 @@ pytest-asyncio
 httpx
 aiosqlite
 redis
+pydantic-settings

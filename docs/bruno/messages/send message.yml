@@ -8,14 +8,14 @@ http:
   url: "{{base_url}}/chats/:chatId/messages"
   params:
     - name: chatId
-      value: "21"
+      value: "34"
       type: path
   body:
     type: json
     data: |-
       {
         "model": "Qwen/Qwen3.5-0.8B",
-        "prompt": "what is the meaning of life"
+        "prompt": "write a really long story"
       }
   auth:
     type: bearer

@@ -8,11 +8,11 @@ from database import SessionLocal
 from models.message import Message
 from repository.message import MessageRepository
 from event_broker.redis import dequeue_task, publish_stream_event, redis_client
-from constants import TASK_QUEUE_NAME, LLM_API_URL, TOKENIZE_URL, SYSTEM_PROMPT, MAX_LLM_TOKENS
+from config import settings
 from core.logger import logger
 from core.exceptions import LLMAPIError, LLMConnectionError, AppException
 
-DLQ_NAME = f"{TASK_QUEUE_NAME}_dlq"
+DLQ_NAME = f"{settings.task_queue_name}_dlq"
 
 async def process_task(task_data: dict):
     chat_id = task_data["chat_id"]

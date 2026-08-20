@@ -25,24 +25,26 @@ async def enqueue_message(request: SendMessageRequest, user_id: str, chat_id: in
     )
     try:
         message = await message_repository.add(new_message)
+        await session.flush()  # flush to get the message_id before commit
+        message_id = message.message_id
         await session.commit() # to prevent race conditions
     except Exception as e:
         logger.error(f"Failed to write to database for chat {chat_id} by user {user_id}: {e}")
         raise InternalServerError(log_message=str(e)) from e
     
-    logger.info(f"Enqueued message with ID {message.message_id} for chat {chat_id} by user {user_id}")
+    logger.info(f"Enqueued message with ID {message_id} for chat {chat_id} by user {user_id}")
     
     try:
         await enqueue_task(
                 chat_id=chat_id,
                 user_id=int(user_id),
-                message_id=message.message_id
+                message_id=message_id
         )
     except Exception as e:
-        logger.error(f"Failed to enqueue task for message ID {message.message_id} in chat {chat_id} by user {user_id}: {e}")
+        logger.error(f"Failed to enqueue task for message ID {message_id} in chat {chat_id} by user {user_id}: {e}")
         raise InternalServerError(log_message=str(e)) from e
     
-    logger.info(f"Task enqueued for message ID {message.message_id} in chat {chat_id} by user {user_id}")
+    logger.info(f"Task enqueued for message ID {message_id} in chat {chat_id} by user {user_id}")
     
     return "Message enqueued successfully"
 

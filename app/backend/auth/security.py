@@ -3,7 +3,7 @@ import logging
 import bcrypt 
 import datetime
 import jwt
-from constants import JWT_KEY
+from config import settings
 
 def hash_password(password: str) -> str:
     
@@ -22,12 +22,12 @@ def generate_jwt_token(user_id: str, role: str, expire: int = 30) -> str:
         'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=expire)
     }
     
-    token = jwt.encode(payload, JWT_KEY, algorithm='HS256')
+    token = jwt.encode(payload, settings.jwt_key, algorithm='HS256')
     return token
 
 def validate_jwt_token(token: str) -> dict | None:
     try:
-        decoded_payload = jwt.decode(token, JWT_KEY, algorithms=['HS256'])
+        decoded_payload = jwt.decode(token, settings.jwt_key, algorithms=['HS256'])
         return decoded_payload
     except jwt.ExpiredSignatureError:
         logging.warning("Token expired, failed to validate")

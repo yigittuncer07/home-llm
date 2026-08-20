@@ -1,9 +1,9 @@
 #backend/database.py
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from constants import DATABASE_URL
+from config import settings
 
-engine = create_async_engine(DATABASE_URL)
+engine = create_async_engine(settings.database_url)
 
 SessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine, expire_on_commit=False)
 

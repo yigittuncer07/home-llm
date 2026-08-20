@@ -50,9 +50,9 @@ services:
       - --model
       - Qwen/Qwen3.5-0.8B
       - --max-model-len
-      - "2048"
-      - --gpu-memory-utilization
-      - "0.6"  
+      - "10000"
+      # - --gpu-memory-utilization
+      # - "0.6"  
       - --max-num-seqs
       - "2"    
     ports:
