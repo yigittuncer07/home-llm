@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     db_name: str
     db_host: str = "localhost"
     db_port: int = 5432
+    admin_email: str
+    admin_password: str
     
     jwt_key: str
     redis_host: str = "localhost"

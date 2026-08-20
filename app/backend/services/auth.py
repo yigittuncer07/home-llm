@@ -16,6 +16,9 @@ async def authenticate_user(email: str, password: str, session) -> str:
     
     if not verify_password(password, user.password_hash.encode('utf-8')):
         raise InvalidCredentialsError(email, log_message=f"Invalid password for user with email: {email} ID: {user.id}")
+
+    if user.is_admin:
+        return generate_jwt_token(user_id=str(user.id), role="admin")
     
     return generate_jwt_token(user_id=str(user.id), role="user")
     
