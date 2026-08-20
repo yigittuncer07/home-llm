@@ -2,10 +2,11 @@ import os
 import yaml
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from core.logger import logger
 
 def load_models_config() -> dict:
     # Adjust this path based on where you placed models.yaml relative to config.py
-    yaml_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../models.yaml'))
+    yaml_path = os.path.abspath(os.path.join(os.path.dirname(__file__), './models.yaml'))
     
     if not os.path.exists(yaml_path):
         return {}
@@ -27,6 +28,7 @@ class Settings(BaseSettings):
 
     # dynamic Model Configuration loaded from models.yaml
     models_config: dict = Field(default_factory=load_models_config)
+    logger.info("Loaded models configuration: %s", models_config)
 
     # constants
     task_queue_name: str = "task_queue"

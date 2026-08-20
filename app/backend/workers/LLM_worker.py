@@ -9,7 +9,7 @@ from event_broker.redis import dequeue_task, publish_stream_event, redis_client
 from config import settings
 from core.logger import logger
 from core.exceptions import AppException, LLMAPIError, LLMConnectionError
-from providers.factory import get_provider
+from workers.providers.factory import get_provider
 
 DLQ_NAME = f"{settings.task_queue_name}_dlq"
 semaphore = asyncio.Semaphore(settings.max_concurrency)
@@ -49,6 +49,7 @@ async def process_task(task_data: dict):
             detail=f"Model {requested_model} is not supported or not configured.",
             log_message=f"Model {requested_model} is not supported or not configured."
         )
+        logger.error(f"Model {requested_model} is not supported or not configured for chat {chat_id}.")
 
     model_config["chat_id"] = chat_id
     provider_type = model_config["provider_type"]

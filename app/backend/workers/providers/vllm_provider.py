@@ -1,7 +1,7 @@
 import json
 import httpx
 from typing import AsyncGenerator
-from providers.base_provider import BaseProvider
+from workers.providers.base_provider import BaseProvider
 from core.logger import logger
 from core.exceptions import LLMAPIError, LLMConnectionError
 

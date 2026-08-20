@@ -1,6 +1,6 @@
-from providers.base_provider import BaseProvider
-from providers.vllm_provider import VLLMProvider
-from providers.gemini_provider import GeminiProvider
+from workers.providers.base_provider import BaseProvider
+from workers.providers.vllm_provider import VLLMProvider
+from workers.providers.gemini_provider import GeminiProvider
 
 def get_provider(provider_type: str) -> BaseProvider:
     """

@@ -1,8 +1,8 @@
 models:
   # The key should exactly match the requested_model string from the frontend
-  qwen:
+  Qwen/Qwen3.5-0.8B:
     provider_type: "vllm"
-    api_base: "http://localhost:8080" # Replace with your actual vLLM base URL
+    api_base: "http://localhost:8001"
     max_tokens: 4096
     
   gemini-1.5-pro:
