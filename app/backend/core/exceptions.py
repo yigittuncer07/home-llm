@@ -1,3 +1,6 @@
+from typing import Any
+
+
 class AppException(Exception):
     """Base class for all custom API exceptions."""
     def __init__(self, status_code: int, detail: str, log_message: str = ""):
@@ -55,10 +58,11 @@ class InternalServerError(AppException):
 
 class LLMAPIError(AppException):
     """Raised when the LLM API responds with an HTTP error status."""
-    def __init__(self, chat_id: int, api_status_code: int, api_error_body: str, log_message: str = ""):
+    def __init__(self, chat_id: int, api_status_code: int, api_error_body: str, log_message: str = "", headers: dict[str, Any] | None = None):
         self.chat_id = chat_id
         self.api_status_code = api_status_code
         self.api_error_body = api_error_body
+        self.headers = headers or {}
         super().__init__(
             status_code=502, 
             detail="The language model service returned an error",

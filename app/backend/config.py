@@ -1,5 +1,18 @@
 import os
+import yaml
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+def load_models_config() -> dict:
+    # Adjust this path based on where you placed models.yaml relative to config.py
+    yaml_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../models.yaml'))
+    
+    if not os.path.exists(yaml_path):
+        return {}
+        
+    with open(yaml_path, 'r', encoding='utf-8') as f:
+        data = yaml.safe_load(f)
+        return data.get("models", {}) if data else {}
 
 class Settings(BaseSettings):
     # loaded automatically from .env
@@ -10,9 +23,10 @@ class Settings(BaseSettings):
     db_port: int = 5432
     
     jwt_key: str
-    
     redis_host: str = "localhost"
-    llm_api_base: str
+
+    # dynamic Model Configuration loaded from models.yaml
+    models_config: dict = Field(default_factory=load_models_config)
 
     # constants
     task_queue_name: str = "task_queue"
@@ -22,6 +36,10 @@ class Settings(BaseSettings):
         "Provide accurate, clear, and direct answers."
     )
 
+    # max concurrency for processing tasks
+    max_concurrency: int = 50
+    max_retries: int = 3
+    
     # variables
     @property
     def database_url(self) -> str:
@@ -30,14 +48,6 @@ class Settings(BaseSettings):
     @property
     def redis_url(self) -> str:
         return f"redis://{self.redis_host}:6379/0"
-        
-    @property
-    def llm_api_url(self) -> str:
-        return f"{self.llm_api_base}/v1/chat/completions"
-        
-    @property
-    def tokenize_url(self) -> str:
-        return f"{self.llm_api_base}/tokenize"
 
     model_config = SettingsConfigDict(
         env_file=os.path.abspath(os.path.join(os.path.dirname(__file__), '../../.env')),

@@ -1,0 +1,12 @@
+models:
+  # The key should exactly match the requested_model string from the frontend
+  qwen:
+    provider_type: "vllm"
+    api_base: "http://localhost:8080" # Replace with your actual vLLM base URL
+    max_tokens: 4096
+    
+  gemini-1.5-pro:
+    provider_type: "gemini"
+    api_base: "https://generativelanguage.googleapis.com/v1beta"
+    api_key_env_var: "GEMINI_API_KEY" # Look up the key from the OS environment to keep it secure
+    max_tokens: 8192
