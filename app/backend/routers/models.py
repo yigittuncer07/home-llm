@@ -1,16 +1,13 @@
-#backend/routers/models.py
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 from auth.dependencies import require_auth_token
-from services.messages import enqueue_message
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_db
-from models.message import SendMessageRequest, ChatHistoryResponse
-from services.messages import get_chat_history_service
+from models.user_token_balance import UserTokenBalanceItem
 from services.models import get_models_service
 
 router = APIRouter()
 
-@router.get("")
-async def get_models():
-    models = await get_models_service()
+@router.get("", response_model=list[UserTokenBalanceItem])
+async def get_models(user_id: str = Depends(require_auth_token), session: AsyncSession = Depends(get_db)) -> list[UserTokenBalanceItem]:
+    models = await get_models_service(user_id, session)
     return models

@@ -31,3 +31,10 @@ class TokenBalanceResponse(BaseModel):
     balance: int
 
     model_config = {"from_attributes": True}
+
+class UserTokenBalanceItem(BaseModel):
+    model_name: str
+    balance: int
+
+    model_config = {"from_attributes": True}
+    
