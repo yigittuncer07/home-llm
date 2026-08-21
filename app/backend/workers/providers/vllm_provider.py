@@ -13,7 +13,7 @@ class VLLMProvider(BaseProvider):
         if not api_base:
             raise ValueError("api_base is missing from model configuration.")
 
-        max_tokens = model_config.get("max_tokens", 4096)
+        max_generation_tokens = model_config.get("max_generation_tokens", 1024)
         chat_id = model_config.get("chat_id", 0)
         url = f"{api_base}/v1/chat/completions"
 
@@ -21,8 +21,10 @@ class VLLMProvider(BaseProvider):
             "model": model_name,
             "messages": messages,
             "stream": True,
-            "max_tokens": max_tokens
+            "max_generation_tokens": max_generation_tokens
         }
+
+        logger.info(f"Sending request to vLLM API for chat {chat_id} with payload: {payload}")
 
         try:
             async with httpx.AsyncClient(timeout=120) as client:
@@ -94,7 +96,7 @@ class VLLMProvider(BaseProvider):
         until the context fits within the model's context window.
         """
         api_base = model_config.get("api_base")
-        max_tokens = model_config.get("max_tokens", 4096)
+        max_generation_tokens = model_config.get("max_generation_tokens", 1024)
         chat_id = model_config.get("chat_id", 0)
 
         if not api_base:
@@ -103,14 +105,15 @@ class VLLMProvider(BaseProvider):
         # Work on a shallow copy to prevent side effects
         truncated = list(messages)
 
-        while len(truncated) > 1:
+        while len(truncated) > 2:  # Ensure at least system prompt + 1 turn pair remains
             total_tokens, max_model_len = await self._get_token_count(
                 truncated, model_name, api_base, chat_id
             )
 
-            if total_tokens <= (max_model_len - max_tokens):
+            if total_tokens <= (max_model_len - max_generation_tokens):
                 break
 
+            logger.info(f"Truncating messages for chat {chat_id}. Total tokens: {total_tokens}, Max model length: {max_model_len}, Max tokens allowed: {max_generation_tokens}. Current message count: {len(truncated)}")
             # If system prompt + at least 1 turn pair exists, pop oldest turn
             if len(truncated) >= 3:
                 truncated.pop(1)  # Remove oldest user message

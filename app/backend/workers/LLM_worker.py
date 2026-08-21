@@ -42,7 +42,7 @@ async def process_task(task_data: dict):
             messages_payload.append({"role": m.role, "content": m.content})
 
         requested_model = history[-1].model
-
+    
     model_config = settings.models_config.get(requested_model)
     if not model_config:
         logger.error(f"Model {requested_model} is not supported or not configured for chat {chat_id}.")
@@ -127,6 +127,7 @@ async def process_task(task_data: dict):
         logger.info(f"Finished processing and saved assistant message for chat {chat_id}")
 
 async def process_and_release(task: dict):
+    logger.info(f"Processing task for chat {task.get('chat_id')}")
     try:
         await process_task(task)
     except AppException as e:

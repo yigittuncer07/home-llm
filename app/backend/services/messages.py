@@ -25,6 +25,7 @@ async def enqueue_message(request: SendMessageRequest, user_id: str, chat_id: in
         content=request.prompt,
         timestamp=None # will be set by the database
     )
+    logger.info(f"Enqueuing message for chat {chat_id} by user {user_id} with model {request.model}. Prompt: {request.prompt}")
     try:
         message = await message_repository.add(new_message)
         await session.flush()  # flush to get the message_id before commit
