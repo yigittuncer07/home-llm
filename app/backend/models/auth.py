@@ -12,4 +12,5 @@ class LoginResponse(BaseModel):
 class RegisterRequest(BaseModel):
     email: str
     password: str
+    is_admin: bool = False
     

@@ -13,13 +13,24 @@ async def admin_headers(client):
     return {"Authorization": f"Bearer {token}"}
 
 async def test_admin_register_user(client, admin_headers):
+    # Test registering a standard user
     response = await client.post(
         "/admin/users", 
         headers=admin_headers,
-        json={"email": "newuser@example.com", "password": "password123"}
+        json={"email": "newuser@example.com", "password": "password123", "is_admin": False}
     )
     assert response.status_code == 200
     assert response.json()["email"] == "newuser@example.com"
+    assert response.json()["is_admin"] is False
+
+    # Test registering an admin user
+    response_admin = await client.post(
+        "/admin/users", 
+        headers=admin_headers,
+        json={"email": "newadmin@example.com", "password": "password123", "is_admin": True}
+    )
+    assert response_admin.status_code == 200
+    assert response_admin.json()["is_admin"] is True
 
 async def test_admin_register_existing_user(client, admin_headers):
     await client.post(
@@ -41,7 +52,6 @@ async def test_get_all_users(client, admin_headers):
     users = response.json()
     assert isinstance(users, list)
     assert len(users) >= 1
-    # Verify token_balances relationship is present in the list
     assert "token_balances" in users[0]
 
 async def test_delete_user(client, admin_headers):
@@ -87,6 +97,13 @@ async def test_admin_endpoints_unauthorized(client):
     assert resp2.status_code in [401, 403]
 
 async def test_update_and_get_user_tokens(client, admin_headers):
+    # Ensure there is at least one model to test against
+    configured_models = list(settings.models_config.keys())
+    if not configured_models:
+        pytest.skip("Test requires at least 1 model in models.yaml")
+    
+    test_model = configured_models[0]
+
     # Create user
     create_resp = await client.post(
         "/admin/users", 
@@ -99,19 +116,23 @@ async def test_update_and_get_user_tokens(client, admin_headers):
     patch_resp = await client.patch(
         f"/admin/users/{user_id}/tokens",
         headers=admin_headers,
-        json={"model_name": "qwen", "balance": 1500}
+        json={"model_name": test_model, "balance": 1500}
     )
     assert patch_resp.status_code == 200
     assert patch_resp.json()["balance"] == 1500
-    assert patch_resp.json()["model_name"] == "qwen"
+    assert patch_resp.json()["model_name"] == test_model
 
     # Fetch user details to verify tokens eager-loaded correctly
     get_resp = await client.get(f"/admin/users/{user_id}", headers=admin_headers)
     assert get_resp.status_code == 200
     user_data = get_resp.json()
     
-    assert len(user_data["token_balances"]) == 1
-    assert user_data["token_balances"][0]["balance"] == 1500
+    # Length should match total configured models
+    assert len(user_data["token_balances"]) == len(settings.models_config)
+    
+    # Find the specific model and verify the balance updated
+    updated_token = next(t for t in user_data["token_balances"] if t["model_name"] == test_model)
+    assert updated_token["balance"] == 1500
 
 async def test_admin_chat_management(client, admin_headers, auth_headers_factory):
     # Create a normal user via the factory and authenticate them

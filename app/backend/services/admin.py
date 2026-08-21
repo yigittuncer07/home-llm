@@ -11,8 +11,9 @@ from core.exceptions import ChatNotFoundError, UserAlreadyExistsError, UserNotFo
 from repository.user_token_balance import UserTokenBalanceRepository
 from models.user_token_balance import TokenBalanceResponse
 from core.logger import logger
+from config import settings
 
-async def delete_user_service(session: AsyncSession, user_id: int) -> UserResponse:
+async def delete_user_service(user_id: int, session: AsyncSession) -> UserResponse:
     user_repository = UserRepository(session)
     user = await user_repository.get_by_id(user_id)
     
@@ -26,17 +27,21 @@ async def delete_user_service(session: AsyncSession, user_id: int) -> UserRespon
     
     return UserResponse.model_validate(user)
 
-async def register_user_service(email: str, password: str, session: AsyncSession) -> UserResponse:
+async def register_user_service(email: str, password: str, is_admin: bool, session: AsyncSession) -> UserResponse:
     user_repository = UserRepository(session)
     user = await user_repository.get_by_email(email)
     
     if user:
         raise UserAlreadyExistsError(email, log_message=f"Attempt to register existing user with email: {email} ID: {user.id}")
 
+    if is_admin:
+        logger.warning(f"Admin registration attempt for email: {email}. Ensure this is intended.")
+        
     user = await user_repository.add(
         User(
             email=email,
-            password_hash=hash_password(password)
+            password_hash=hash_password(password),
+            is_admin=is_admin
         )
     )
     logger.info(f"User registered with email: {email} ID: {user.id}")
@@ -74,8 +79,32 @@ async def get_user_details_service(user_id: int, session: AsyncSession) -> UserR
         logger.warning(log_message)
         raise UserNotFoundError(user_id, log_message=log_message)
 
+    # these extra steps are to make sure ALL models are returned.
+    # validate the user and their existing database tokens
+    response = UserResponse.model_validate(user)
+    
+    # map existing balances by model_name
+    existing_balances = {b.model_name: b for b in response.token_balances}
+    full_balances = []
+    
+    # build the full list against models_config
+    for model_name in settings.models_config.keys():
+        if model_name in existing_balances:
+            full_balances.append(existing_balances[model_name])
+        else:
+            full_balances.append(
+                TokenBalanceResponse(
+                    id=0,
+                    userId=user_id,
+                    model_name=model_name,
+                    balance=0
+                )
+            )
+            
+    response.token_balances = full_balances
     logger.info(f"Retrieved details for user {user_id}.")
-    return UserResponse.model_validate(user)
+    
+    return response
 
 async def delete_chat_by_id(chat_id: int, session: AsyncSession) -> ChatItem:
     chat_repository = ChatRepository(session)

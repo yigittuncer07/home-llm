@@ -18,12 +18,12 @@ async def get_users(db: AsyncSession = Depends(get_db), _: str = Depends(require
 
 @router.delete('/users/{user_id}', response_model=UserResponse)
 async def delete_user(user_id: int, db: AsyncSession = Depends(get_db), _: str = Depends(require_admin_token)) -> UserResponse:
-    deleted_user = await delete_user_service(db, user_id)
+    deleted_user = await delete_user_service(user_id, db)
     return deleted_user
 
 @router.post('/users', response_model=UserResponse)
 async def register_user(request: RegisterRequest, db: AsyncSession = Depends(get_db), _: str = Depends(require_admin_token)) -> UserResponse:
-    result = await register_user_service(request.email, request.password, db)
+    result = await register_user_service(request.email, request.password, request.is_admin, db)
     return result
 
 @router.patch('/users/{user_id}/tokens', response_model=TokenBalanceResponse)
