@@ -3,13 +3,9 @@ import {
   useRef,
   useEffect,
   type KeyboardEvent,
-  type ChangeEvent,
 } from 'react';
 import { SendHorizontal, Square } from 'lucide-react';
-
-// Default model — override with VITE_DEFAULT_MODEL env variable.
-// The backend requires a model name for every message (it passes it to the LLM worker).
-const DEFAULT_MODEL = import.meta.env.VITE_DEFAULT_MODEL ?? 'llama3.1';
+import type { ModelBalance } from '../../types';
 
 interface MessageInputProps {
   onSend: (prompt: string, model: string) => Promise<void>;
@@ -18,6 +14,10 @@ interface MessageInputProps {
   disabled?: boolean;
   initialValue?: string;
   onInitialValueConsumed?: () => void;
+  models: ModelBalance[];
+  selectedModel: string;
+  onModelChange: (model: string) => void;
+  tokenBalance: number | null;
 }
 
 export default function MessageInput({
@@ -27,9 +27,12 @@ export default function MessageInput({
   disabled,
   initialValue,
   onInitialValueConsumed,
+  models,
+  selectedModel,
+  onModelChange,
+  tokenBalance,
 }: MessageInputProps) {
   const [value, setValue] = useState('');
-  const [model, setModel] = useState(DEFAULT_MODEL);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Prefill from suggestion chip
@@ -53,7 +56,7 @@ export default function MessageInput({
     const trimmed = value.trim();
     if (!trimmed || isStreaming || disabled) return;
     setValue('');
-    await onSend(trimmed, model);
+    await onSend(trimmed, selectedModel);
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -63,7 +66,7 @@ export default function MessageInput({
     }
   }
 
-  const canSend = value.trim().length > 0 && !isStreaming && !disabled;
+  const canSend = value.trim().length > 0 && !isStreaming && !disabled && selectedModel !== '';
 
   return (
     <div className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-3">
@@ -76,14 +79,23 @@ export default function MessageInput({
           >
             Model
           </label>
-          <input
+          <select
             id="model-select"
-            type="text"
-            value={model}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setModel(e.target.value)}
-            className="text-xs bg-transparent text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 py-0.5 w-32"
-            placeholder="model name"
-          />
+            value={selectedModel}
+            onChange={(e) => onModelChange(e.target.value)}
+            disabled={models.length === 0}
+            className="text-xs bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 py-0.5 disabled:opacity-50"
+          >
+            {models.length === 0 && <option value="">Loading…</option>}
+            {models.map((m) => (
+              <option key={m.model_name} value={m.model_name}>{m.model_name}</option>
+            ))}
+          </select>
+          {tokenBalance !== null && (
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              {Math.max(0, tokenBalance).toLocaleString()} tokens
+            </span>
+          )}
         </div>
 
         {/* Input row */}

@@ -25,7 +25,8 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Only force-logout on 401s from authenticated requests, not from the login endpoint itself
+    if (error.response?.status === 401 && currentToken) {
       setClientToken(null);
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_email');

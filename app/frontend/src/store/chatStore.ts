@@ -1,3 +1,4 @@
+// src/store/chatStore.ts
 import { create } from 'zustand';
 import type { Chat, Message } from '../types';
 

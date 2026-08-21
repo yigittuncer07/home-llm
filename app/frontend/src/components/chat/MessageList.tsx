@@ -6,9 +6,11 @@ import MessageBubble from './MessageBubble';
 
 interface MessageListProps {
   chatId: number;
+  failedMessageId?: number;
+  onRetry?: () => void;
 }
 
-export default function MessageList({ chatId }: MessageListProps) {
+export default function MessageList({ chatId, failedMessageId, onRetry }: MessageListProps) {
   const messages = useChatStore((s) => s.messagesByChat[chatId] ?? []);
   const streamingMessage = useChatStore((s) => s.streamingMessage);
   const isStreaming = useChatStore((s) => s.isStreaming);
@@ -29,7 +31,11 @@ export default function MessageList({ chatId }: MessageListProps) {
       className="flex-1 overflow-y-auto py-4 space-y-1 scroll-smooth"
     >
       {messages.map((msg) => (
-        <MessageBubbleFromMessage key={msg.message_id} message={msg} />
+        <MessageBubbleFromMessage
+          key={msg.message_id}
+          message={msg}
+          onRetry={msg.message_id === failedMessageId ? onRetry : undefined}
+        />
       ))}
 
       {/* In-flight streaming message */}

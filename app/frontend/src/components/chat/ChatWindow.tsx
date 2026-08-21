@@ -3,12 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { getChatHistory } from '../../api/messages';
 import { sendMessage } from '../../api/messages';
+import { getModels } from '../../api/models';
 import { useChatStore } from '../../store/chatStore';
 import { useStream } from '../../hooks/useStream';
 import MessageList from './MessageList';
 import MessageInput from './MessageInput';
 import EmptyState from './EmptyState';
-import type { Message } from '../../types';
+import type { Message, ModelBalance } from '../../types';
 
 export default function ChatWindow() {
   const { chatId: chatIdStr } = useParams<{ chatId: string }>();
@@ -21,6 +22,22 @@ export default function ChatWindow() {
 
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [suggestionPrefill, setSuggestionPrefill] = useState('');
+  const [models, setModels] = useState<ModelBalance[]>([]);
+  const [selectedModel, setSelectedModel] = useState('');
+  const [failedSend, setFailedSend] = useState<{ prompt: string; model: string; messageId: number } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getModels()
+      .then((data) => {
+        if (!cancelled) {
+          setModels(data);
+          setSelectedModel((prev) => prev || data[0]?.model_name || '');
+        }
+      })
+      .catch(() => toast.error('Failed to load models.'));
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (!chatId) return;
@@ -48,8 +65,9 @@ export default function ChatWindow() {
   }, [chatId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSend(prompt: string, model: string) {
+    const optimisticId = Date.now();
     const optimisticMsg: Message = {
-      message_id: Date.now(),
+      message_id: optimisticId,
       chat_id: chatId,
       model,
       tokens: null,
@@ -58,6 +76,7 @@ export default function ChatWindow() {
       timestamp: new Date().toISOString(),
     };
     appendMessage(chatId, optimisticMsg);
+    setFailedSend(null);
 
     try {
       await sendMessage(chatId, { prompt, model });
@@ -66,7 +85,26 @@ export default function ChatWindow() {
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number } }).response?.status;
       if (status !== 401) {
-        toast.error('Failed to send message.');
+        const msg = status === 402 ? 'Insufficient tokens.' : 'Failed to send message.';
+        toast.error(msg);
+        setFailedSend({ prompt, model, messageId: optimisticId });
+      }
+    }
+  }
+
+  async function handleRetry() {
+    if (!failedSend) return;
+    const { prompt, model, messageId } = failedSend;
+    setFailedSend(null);
+    try {
+      await sendMessage(chatId, { prompt, model });
+      startStream();
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } }).response?.status;
+      if (status !== 401) {
+        const msg = status === 402 ? 'Insufficient tokens.' : 'Retry failed.';
+        toast.error(msg);
+        setFailedSend({ prompt, model, messageId });
       }
     }
   }
@@ -89,7 +127,11 @@ export default function ChatWindow() {
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-gray-50 dark:bg-gray-950">
       {hasMessages || isStreaming ? (
-        <MessageList chatId={chatId} />
+        <MessageList
+          chatId={chatId}
+          failedMessageId={failedSend?.messageId}
+          onRetry={failedSend ? handleRetry : undefined}
+        />
       ) : (
         <EmptyState onSuggestionClick={setSuggestionPrefill} />
       )}
@@ -100,6 +142,10 @@ export default function ChatWindow() {
         isStreaming={isStreaming}
         initialValue={suggestionPrefill}
         onInitialValueConsumed={() => setSuggestionPrefill('')}
+        models={models}
+        selectedModel={selectedModel}
+        onModelChange={setSelectedModel}
+        tokenBalance={models.find((m) => m.model_name === selectedModel)?.balance ?? null}
       />
     </div>
   );

@@ -34,13 +34,31 @@ export interface LoginResponse {
   token_type: string;
 }
 
-export interface RegisterRequest {
-  email: string;
-  password: string;
+export interface ModelBalance {
+  model_name: string;
+  balance: number;
 }
 
-export interface RegisterResponse {
-  message: string;
+// ----- Admin -----
+
+export interface TokenBalanceResponse {
+  id: number;
+  userId: number;
+  model_name: string;
+  balance: number;
+}
+
+export interface AdminUser {
+  id: number;
+  username: string | null;
+  email: string;
+  is_admin: boolean;
+  token_balances: TokenBalanceResponse[];
+}
+
+export interface UpdateTokensRequest {
+  model_name: string;
+  balance: number;
 }
 
 // NOTE: backend SendMessageRequest uses `prompt` (not `content`) and requires a `model` field.

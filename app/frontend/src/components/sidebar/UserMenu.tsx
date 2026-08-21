@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, LogOut, Sun, Moon, Monitor } from 'lucide-react';
+import { Settings, LogOut, Sun, Moon, Monitor, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { logout } from '../../api/auth';
 import { useAuthStore } from '../../store/authStore';
@@ -9,6 +9,7 @@ import { useUIStore } from '../../store/uiStore';
 export default function UserMenu() {
   const navigate = useNavigate();
   const userEmail = useAuthStore((s) => s.userEmail);
+  const isAdmin = useAuthStore((s) => s.isAdmin);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const { theme, setTheme } = useUIStore();
 
@@ -68,6 +69,16 @@ export default function UserMenu() {
             <Settings size={15} />
             Settings
           </button>
+
+          {isAdmin && (
+            <button
+              onClick={() => { setOpen(false); navigate('/admin'); }}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <ShieldCheck size={15} />
+              Admin Dashboard
+            </button>
+          )}
 
           <button
             onClick={cycleTheme}

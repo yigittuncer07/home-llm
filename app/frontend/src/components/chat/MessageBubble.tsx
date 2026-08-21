@@ -2,7 +2,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import { useState } from 'react';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, RefreshCw } from 'lucide-react';
 import TypingIndicator from '../ui/TypingIndicator';
 import type { Message, MessageRole } from '../../types';
 
@@ -166,6 +166,27 @@ export default function MessageBubble({ role, content, isStreaming, interrupted 
 }
 
 // Re-export typed version for the message list
-export function MessageBubbleFromMessage({ message }: { message: Message }) {
-  return <MessageBubble role={message.role} content={message.content} />;
+export function MessageBubbleFromMessage({
+  message,
+  onRetry,
+}: {
+  message: Message;
+  onRetry?: () => void;
+}) {
+  return (
+    <div>
+      <MessageBubble role={message.role} content={message.content} />
+      {onRetry && message.role === 'user' && (
+        <div className="flex justify-end px-4 mt-1">
+          <button
+            onClick={onRetry}
+            className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+          >
+            <RefreshCw size={11} />
+            Retry
+          </button>
+        </div>
+      )}
+    </div>
+  );
 }
