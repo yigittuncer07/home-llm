@@ -1,10 +1,13 @@
 #backend/services/admin.py
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from repository.chat import ChatRepository
+from models.chat import ChatDeleteResponse, ChatItem
+from core.exceptions import PermissionDeniedError
 from auth.security import hash_password
 from repository.user import UserRepository, User
 from models.user import UserResponse
-from core.exceptions import UserAlreadyExistsError, UserNotFoundError
+from core.exceptions import ChatNotFoundError, UserAlreadyExistsError, UserNotFoundError
 from repository.user_token_balance import UserTokenBalanceRepository
 from models.user_token_balance import TokenBalanceResponse
 from core.logger import logger
@@ -73,3 +76,26 @@ async def get_user_details_service(user_id: int, session: AsyncSession) -> UserR
 
     logger.info(f"Retrieved details for user {user_id}.")
     return UserResponse.model_validate(user)
+
+async def delete_chat_by_id(chat_id: int, session: AsyncSession) -> ChatItem:
+    chat_repository = ChatRepository(session)
+    chat = await chat_repository.get_by_id(chat_id)
+    
+    if not chat:
+        log_message = f"Chat with ID: {chat_id} not found for deletion."
+        logger.warning(log_message)
+        raise ChatNotFoundError(chat_id=chat_id, log_message=log_message)
+    
+    await session.delete(chat)
+    await session.commit()
+    logger.info(f"Deleted chat with ID: {chat_id} for user ID: {chat.user_id}.")
+    
+    return ChatItem.model_validate(chat)
+
+async def get_user_chats_service(user_id: int, session: AsyncSession) -> list[ChatItem]:
+    chat_repository = ChatRepository(session)
+    chats = await chat_repository.get_by_user_id(user_id)
+    
+    logger.info(f"Retrieved {len(chats)} chats for user ID: {user_id}.")
+    
+    return [ChatItem.model_validate(chat) for chat in chats]

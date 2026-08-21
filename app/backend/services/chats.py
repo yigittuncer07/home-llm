@@ -1,7 +1,7 @@
 #backend/services/chats.py
 
 import json
-import logging
+import logging # TODO: use the central logger instead
 
 from sqlalchemy.ext.asyncio import AsyncSession
 

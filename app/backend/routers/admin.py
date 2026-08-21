@@ -5,7 +5,8 @@ from auth.dependencies import require_admin_token
 from database import get_db
 from models.user import UserResponse
 from models.auth import RegisterRequest
-from services.admin import get_all_users_service, delete_user_service, register_user_service, set_user_tokens_service, get_user_details_service
+from models.chat import ChatItem
+from services.admin import get_all_users_service, delete_user_service, register_user_service, set_user_tokens_service, get_user_details_service, delete_chat_by_id, get_user_chats_service
 from models.user_token_balance import TokenUpdateRequest, TokenBalanceResponse
 
 router = APIRouter()
@@ -38,3 +39,13 @@ async def get_user_details(
 ) -> UserResponse:
     user_data = await get_user_details_service(user_id, db)
     return UserResponse.model_validate(user_data)
+
+@router.delete('/chat/{chat_id}', response_model=ChatItem)
+async def delete_chat(chat_id: int, db: AsyncSession = Depends(get_db), _: str = Depends(require_admin_token)) -> ChatItem:
+    deleted_chat = await delete_chat_by_id(chat_id, db)
+    return deleted_chat
+
+@router.get('/chats/{user_id}', response_model=list[ChatItem])
+async def get_user_chats(user_id: int, db: AsyncSession = Depends(get_db), _: str = Depends(require_admin_token)) -> list[ChatItem]:
+    chats = await get_user_chats_service(user_id, db)
+    return chats

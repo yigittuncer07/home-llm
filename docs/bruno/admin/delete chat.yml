@@ -1,14 +1,14 @@
 info:
-  name: get user
+  name: delete chat
   type: http
-  seq: 2
+  seq: 5
 
 http:
-  method: GET
-  url: "{{base_url}}/admin/users/:userId"
+  method: DELETE
+  url: "{{base_url}}/admin/chats/:chatId"
   params:
-    - name: userId
-      value: "25"
+    - name: chatId
+      value: ""
       type: path
   auth:
     type: bearer
