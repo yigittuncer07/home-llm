@@ -1,0 +1,6 @@
+name: home-llm
+variables:
+  - name: base_url
+    value: http://localhost:8007
+  - secret: true
+    name: bearer_token

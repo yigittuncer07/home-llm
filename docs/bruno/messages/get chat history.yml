@@ -8,7 +8,7 @@ http:
   url: "{{base_url}}/chats/:chatId/messages"
   params:
     - name: chatId
-      value: "48"
+      value: "50"
       type: path
   auth:
     type: bearer

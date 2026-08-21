@@ -19,6 +19,25 @@ runtime:
   variables:
     - name: base_address
       value: http://0.0.0.0:8007
+  scripts:
+    - type: after-response
+      code: |-
+        try {
+          let data = res.getBody();
+          if (typeof data === 'string') data = JSON.parse(data);
+
+          // Add this line to see what the API is actually returning
+          console.log("Actual Response:", data);
+
+          if (data && data.access_token) {
+            bru.setEnvVar("bearer_token", data.access_token);
+            console.log("Success: Token set!");
+          } else {
+            console.log("Failed: 'access_token' not found.");
+          }
+        } catch (err) {
+          console.log("Script error:", err);
+        }
 
 settings:
   encodeUrl: true
