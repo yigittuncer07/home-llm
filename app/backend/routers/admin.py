@@ -1,5 +1,8 @@
 #backend/routers/admin.py
-from fastapi import Depends, APIRouter
+from typing_extensions import Annotated
+
+from fastapi import Depends, APIRouter, Query
+from fastapi.params import Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from auth.dependencies import require_admin_token
 from database import get_db
@@ -12,8 +15,13 @@ from models.user_token_balance import TokenUpdateRequest, TokenBalanceResponse
 router = APIRouter()
 
 @router.get('/users', response_model=list[UserResponse])
-async def get_users(db: AsyncSession = Depends(get_db), _: str = Depends(require_admin_token)) -> list[UserResponse]:
-    users = await get_all_users_service(db)
+async def get_users(
+    skip: Annotated[int, Query(ge=0, description="Skip the first N users")] = 0,
+    limit: Annotated[int, Query(ge=1, le=1000, description="Limit number of users returned")] = 100,
+    db: AsyncSession = Depends(get_db), 
+    _: str = Depends(require_admin_token)
+) -> list[UserResponse]:
+    users = await get_all_users_service(skip, limit, db)
     return users
 
 @router.delete('/users/{user_id}', response_model=UserResponse)

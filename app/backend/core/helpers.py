@@ -1,3 +1,5 @@
+from models.user import UserResponse
+from models.user_token_balance import TokenBalanceResponse
 from models.chat import Chat
 from repository.chat import ChatRepository
 from core.exceptions import ChatNotFoundError, PermissionDeniedError
@@ -5,6 +7,7 @@ from core.logger import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 from repository.user_token_balance import UserTokenBalanceRepository
 from core.exceptions import AppException
+from config import settings
 
 async def verify_chat_ownership(chat_id: int, user_id: str, session: AsyncSession) -> Chat:
     chat_repository = ChatRepository(session)
@@ -52,3 +55,25 @@ async def ensure_positive_balance(user_id: int, model_name: str, session: AsyncS
             detail=f"Token balance depleted for model {model_name}.",
             log_message=log_message
         )
+
+        
+def backfill_token_balances(response: UserResponse) -> UserResponse:
+    """Helper to ensure all configured models are present in the response."""
+    existing_balances = {b.model_name: b for b in response.token_balances}
+    full_balances = []
+    
+    for model_name in settings.models_config.keys():
+        if model_name in existing_balances:
+            full_balances.append(existing_balances[model_name])
+        else:
+            full_balances.append(
+                TokenBalanceResponse(
+                    id=0, # placeholder
+                    userId=response.id,
+                    model_name=model_name,
+                    balance=0
+                )
+            )
+            
+    response.token_balances = full_balances
+    return response

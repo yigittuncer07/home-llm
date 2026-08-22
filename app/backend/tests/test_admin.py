@@ -177,3 +177,28 @@ async def test_admin_not_found_errors(client, admin_headers):
     # Chat delete 404
     resp3 = await client.delete("/admin/chat/999999", headers=admin_headers)
     assert resp3.status_code == 404
+
+async def test_get_all_users_pagination(client, admin_headers):
+    # register 3 new users to ensure we have enough data for pagination
+    for i in range(3):
+        await client.post(
+            "/admin/users", 
+            headers=admin_headers,
+            json={"email": f"pageuser{i}@example.com", "password": "password123"}
+        )
+
+    # test limit
+    resp_limit = await client.get("/admin/users?limit=2", headers=admin_headers)
+    assert resp_limit.status_code == 200
+    assert len(resp_limit.json()) == 2
+
+    # test skip and limit together
+    resp_skip = await client.get("/admin/users?skip=1&limit=2", headers=admin_headers)
+    assert resp_skip.status_code == 200
+    assert len(resp_skip.json()) == 2
+    
+    # verify it actually skipped the first record by comparing IDs
+    first_page_ids = [u["id"] for u in resp_limit.json()]
+    second_page_ids = [u["id"] for u in resp_skip.json()]
+    
+    assert first_page_ids[1] == second_page_ids[0]

@@ -11,7 +11,7 @@ from core.exceptions import ChatNotFoundError, UserAlreadyExistsError, UserNotFo
 from repository.user_token_balance import UserTokenBalanceRepository
 from models.user_token_balance import TokenBalanceResponse
 from core.logger import logger
-from config import settings
+from core.helpers import backfill_token_balances
 
 async def delete_user_service(user_id: int, session: AsyncSession) -> UserResponse:
     user_repository = UserRepository(session)
@@ -63,12 +63,12 @@ async def set_user_tokens_service(user_id: int, model_name: str, balance: int, s
     
     return TokenBalanceResponse.model_validate(record)
 
-async def get_all_users_service(session: AsyncSession) -> list[UserResponse]:
+async def get_all_users_service(skip: int, limit: int, session: AsyncSession) -> list[UserResponse]:
     user_repository = UserRepository(session)
-    users = await user_repository.get_all()
-    logger.info(f"Retrieved {len(users)} users from the database.")
+    users = await user_repository.get_all(skip=skip, limit=limit)
+    logger.info(f"Retrieved {len(users)} users from the database (skip={skip}, limit={limit}).")
     
-    return [UserResponse.model_validate(user) for user in users]
+    return [backfill_token_balances(UserResponse.model_validate(user)) for user in users]
 
 async def get_user_details_service(user_id: int, session: AsyncSession) -> UserResponse:
     user_repository = UserRepository(session)
@@ -79,32 +79,10 @@ async def get_user_details_service(user_id: int, session: AsyncSession) -> UserR
         logger.warning(log_message)
         raise UserNotFoundError(user_id, log_message=log_message)
 
-    # these extra steps are to make sure ALL models are returned.
-    # validate the user and their existing database tokens
-    response = UserResponse.model_validate(user)
-    
-    # map existing balances by model_name
-    existing_balances = {b.model_name: b for b in response.token_balances}
-    full_balances = []
-    
-    # build the full list against models_config
-    for model_name in settings.models_config.keys():
-        if model_name in existing_balances:
-            full_balances.append(existing_balances[model_name])
-        else:
-            full_balances.append(
-                TokenBalanceResponse(
-                    id=0,
-                    userId=user_id,
-                    model_name=model_name,
-                    balance=0
-                )
-            )
-            
-    response.token_balances = full_balances
     logger.info(f"Retrieved details for user {user_id}.")
     
-    return response
+    response = UserResponse.model_validate(user)
+    return backfill_token_balances(response)
 
 async def delete_chat_by_id(chat_id: int, session: AsyncSession) -> ChatItem:
     chat_repository = ChatRepository(session)

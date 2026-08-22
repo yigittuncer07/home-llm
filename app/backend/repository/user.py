@@ -30,9 +30,12 @@ class UserRepository:
         result = await self.session.execute(select(User).where(User.email == email))
         return result.scalar_one_or_none()
 
-    async def get_all(self) -> list[User]:
+    async def get_all(self, skip: int = 0, limit: int = 100) -> list[User]:
         result = await self.session.execute(
-            select(User).options(selectinload(User.token_balances))
+            select(User)
+            .options(selectinload(User.token_balances))
+            .offset(skip)
+            .limit(limit)
         )
         return list(result.scalars().all())
     
