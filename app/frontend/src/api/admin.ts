@@ -1,12 +1,12 @@
 import { apiClient } from './client';
 import type { AdminUser, UpdateTokensRequest, TokenBalanceResponse } from '../types';
 
-export async function getAdminUsers(): Promise<AdminUser[]> {
-  const res = await apiClient.get<AdminUser[]>('/admin/users');
+export async function getAdminUsers(params?: { skip?: number; limit?: number }): Promise<AdminUser[]> {
+  const res = await apiClient.get<AdminUser[]>('/admin/users', { params });
   return res.data;
 }
 
-export async function createAdminUser(data: { email: string; password: string }): Promise<AdminUser> {
+export async function createAdminUser(data: { email: string; password: string; is_admin?: boolean }): Promise<AdminUser> {
   const res = await apiClient.post<AdminUser>('/admin/users', data);
   return res.data;
 }
