@@ -19,13 +19,9 @@ cp .env.example .env
 
 ```
 
-Open `.env` in a text editor and fill in your details.
+Open `.env` in a text editor and fill in your details if there are any you want to change, especially check the ADMIN info.
 
-* Set your `ADMIN_EMAIL` and `ADMIN_PASSWORD` (used for your initial login). Or just leave them as is.
-
-Configure your available models by editing `app/backend/models.yaml`.
-
-* If using the local vLLM container, set the `api_base` to `http://vllm:8001/v1`. If running on another machine, set accordingly.
+Configure your available models by editing `app/backend/models.yaml` if you want to change the default qwen model.
 
 ### 3. Deployment
 
@@ -38,7 +34,7 @@ docker compose up -d
 ```
 
 **Option B: Deploy WITH local models (Requires NVIDIA GPU)**
-If you want to host an open-source model directly on this machine using your GPU, activate the `local-gpu` profile. Be sure to set the backend/models.yaml file to have the model you want, along with variables in your .env file. The default model is Qwen3.5-0.8B.
+If you want to host an open-source model directly on this machine using your GPU, activate the `vllm` profile. Be sure to set the backend/models.yaml file to have the model you want, along with variables in your .env file. The default model is Qwen3.5-0.8B.
 
 ```bash
 docker compose --profile local-gpu up -d
