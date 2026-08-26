@@ -1,6 +1,6 @@
 # Home LLM
 
-Deploy your own LLM chat website from home! 
+Deploy your own LLM chat website from home!   
 I built this website to have a standard LLM chat interface (like https://claude.ai, https://gemini.google.com/, or any other LLM provider) for my VLLM instances I have at home, and for the free API key's I have sitting around. 
  
 ## Quick Start
@@ -21,7 +21,7 @@ cp .env.example .env
 
 Open `.env` in a text editor and fill in your details.
 
-* Set your `ADMIN_EMAIL` and `ADMIN_PASSWORD` (used for your initial login).
+* Set your `ADMIN_EMAIL` and `ADMIN_PASSWORD` (used for your initial login). Or just leave them as is.
 
 Configure your available models by editing `app/backend/models.yaml`.
 
