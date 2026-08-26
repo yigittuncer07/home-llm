@@ -9,6 +9,8 @@ Username: demo@demouser.gmail.com
 Password: password  
 This user probably won't have any credits though.
 
+<img width="1866" height="915" alt="image" src="https://github.com/user-attachments/assets/ca2a80c5-1471-4054-acad-9c9169c2097d" />
+
  
 ## Quick Start
 
