@@ -23,7 +23,7 @@ Clone the repository and set up your environment variables:
 git clone https://github.com/yigittuncer07/home-llm
 cd home-llm
 cp .env.example .env
-
+cp app/frontend/.env.example app/frontend/.env
 ```
 
 Open `.env` in a text editor and fill in your details if there are any you want to change, especially check the ADMIN info.
