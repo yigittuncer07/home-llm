@@ -1,7 +1,14 @@
 # Home LLM
 
 Deploy your own LLM chat website from home!   
-I built this website to have a standard LLM chat interface (like https://claude.ai, https://gemini.google.com/, or any other LLM provider) for my VLLM instances I have at home, and for the free API key's I have sitting around. 
+
+I built this website to have a standard LLM chat interface (like https://claude.ai, https://gemini.google.com/, or any other LLM provider) for my VLLM instances I have at home, and for the free API key's I have sitting around.  
+
+I host my own instance at [llm.yigittuncer.net](https://llm.yigittuncer.net) if you want to check it out, you can log in with:  
+Username: demo@demouser.gmail.com  
+Password: password  
+This user probably won't have any credits though.
+
  
 ## Quick Start
 
@@ -13,7 +20,7 @@ I built this website to have a standard LLM chat interface (like https://claude.
 Clone the repository and set up your environment variables:
 
 ```bash
-git clone [https://github.com/yigittuncer07/home-llm](https://github.com/yigittuncer07/home-llm)
+git clone https://github.com/yigittuncer07/home-llm
 cd home-llm
 cp .env.example .env
 
@@ -37,7 +44,7 @@ docker compose up -d
 If you want to host an open-source model directly on this machine using your GPU, activate the `vllm` profile. Be sure to set the backend/models.yaml file to have the model you want, along with variables in your .env file. The default model is Qwen3.5-0.8B.
 
 ```bash
-docker compose --profile local-gpu up -d
+docker compose --profile vllm up -d
 
 ```
 
