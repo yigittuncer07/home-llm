@@ -15,7 +15,7 @@ db_user = os.getenv("DB_USER")
 db_password = os.getenv("DB_PASSWORD")
 db_name = os.getenv("DB_NAME")
 
-db_url = f"postgresql://{db_user}:{db_password}@localhost/{db_name}"
+db_url = f"postgresql://{db_user}:{db_password}@db/{db_name}"
 config.set_main_option("sqlalchemy.url", db_url)
 
 # Interpret the config file for Python logging.

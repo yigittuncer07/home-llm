@@ -3,62 +3,86 @@ services:
     build: ./app/frontend
     env_file: 
       - .env
-    environment:
-      - WATCHPACK_POLLING=true
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
+    restart: unless-stopped
 
   backend:
-    build: ./app/backend
+    build: app/backend
     env_file: 
       - .env
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "${BACKEND_PORT}:8000"
     depends_on:
       - db
+      - redis
+    volumes:
+    - ./alembic.ini:/app/alembic.ini:ro
+    - ./alembic:/app/alembic:ro
+    # ensure migrations run before the API starts
+    command: >
+      sh -c "alembic upgrade head && uvicorn app:app --host 0.0.0.0 --port 8000"
+    restart: unless-stopped
+
+  worker:
+    build: app/backend
+    env_file: 
+      - .env
+    depends_on:
+      - db
+      - redis
+    command: python3 -m workers.LLM_worker
+    restart: unless-stopped
 
   db:
-    image: postgres
-    restart: always
+    image: postgres:15-alpine
+    restart: unless-stopped
     shm_size: 128mb
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      
     volumes:
-      - pgdata:/var/lib/postgresql
-    ports:
-      - "${DB_PORT:-5432}:5432"
+      - pgdata:/var/lib/postgresql/data
+    # ports: # uncomment if you want the DB accesible outside the docker network (e.g. for local development)
+    #   - "${DB_PORT}:5432"
 
   redis:
     image: redis:alpine
-    restart: always
+    restart: unless-stopped
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "${REDIS_PORT}:6379"
     volumes:
       - redisdata:/data
 
   nginx:
     image: nginx:alpine
     ports:
-      - "${NGINX_PORT:-80}:80"
+      - "${NGINX_PORT}:80"
     volumes:
       - ./app/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - frontend
       - backend
+    restart: unless-stopped
 
   vllm:
     image: vllm/vllm-openai:latest
+    profiles: 
+      - vllm  
     command: 
       - --model
       - ${LLM_MODEL}
       - --max-model-len
       - "${LLM_MAX_LEN}"
       - --max-num-seqs
-      - "2"    
+      - "${LLM_MAX_SEQS}" 
+      - --port
+      - "${LLM_PORT}"
     ports:
-      - "${LLM_PORT:-8001}:8000"
+      - "${LLM_PORT}:${LLM_PORT}"
     volumes:
       - model_cache:/root/.cache/huggingface
     deploy:
@@ -68,6 +92,7 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+    restart: unless-stopped
               
 volumes:
   pgdata:
