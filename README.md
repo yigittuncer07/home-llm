@@ -32,7 +32,7 @@ Configure your available models by editing `app/backend/models.yaml` if you want
 
 ### 3. Deployment
 
-**Option A: Deploy WITHOUT local models (External APIs only)**
+**Option A: Deploy without VLLM**
 If you are using remote API's or if VLLM is running on another machine, run like this to run without VLLM:
 
 ```bash
@@ -40,9 +40,9 @@ docker compose up -d
 
 ```
 
-**Option B: Deploy WITH local models (Requires NVIDIA GPU)**
+**Option B: Deploy with VLLM**
 If you want to host an open-source model directly on this machine using your GPU, activate the `vllm` profile. Be sure to set the backend/models.yaml file to have the model you want, along with variables in your .env file. The default model is Qwen3.5-0.8B.
-
+*
 ```bash
 docker compose --profile vllm up -d
 
