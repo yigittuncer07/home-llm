@@ -93,6 +93,37 @@ services:
               count: all
               capabilities: [gpu]
     restart: unless-stopped
+
+  llamacpp:
+    image: ghcr.io/ggml-org/llama.cpp:server-cuda
+    profiles: 
+      - llamacpp
+    command: 
+      - "--hf-repo"
+      - "${LLM_HF_REPO}" 
+      - "--hf-file"
+      - "${LLM_HF_FILE}"
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "${LLM_PORT}"
+      - "-c"
+      - "${LLM_MAX_LEN}"
+      - "--n-gpu-layers"
+      - "999" # offloads all layers to the GPU
+    ports:
+      - "${LLM_PORT}:${LLM_PORT}"
+    volumes:
+      # using a bind mount to the host machine's cache makes managing models much easier
+      - ~/.cache/huggingface:/root/.cache/huggingface
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
               
 volumes:
   pgdata:
