@@ -1,3 +1,5 @@
+// src/api/admin.ts
+
 import { apiClient } from './client';
 import type { AdminUser, UpdateTokensRequest, TokenBalanceResponse } from '../types';
 
@@ -21,4 +23,9 @@ export async function updateUserTokens(
 ): Promise<TokenBalanceResponse> {
   const res = await apiClient.patch<TokenBalanceResponse>(`/admin/users/${userId}/tokens`, data);
   return res.data;
+}
+
+export async function massUpdateTokens(payload: { model_name: string; balance: number }) {
+  const response = await apiClient.patch('/admin/users/tokens', payload);
+  return response.data;
 }

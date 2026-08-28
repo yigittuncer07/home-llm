@@ -1,8 +1,8 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { ArrowLeft, Plus, Trash2, Coins, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getAdminUsers, createAdminUser, deleteAdminUser, updateUserTokens } from '../../api/admin';
+import { ArrowLeft, Plus, Trash2, Coins, X, ChevronLeft, ChevronRight, Layers } from 'lucide-react';
+import { getAdminUsers, createAdminUser, deleteAdminUser, updateUserTokens, massUpdateTokens } from '../../api/admin';
 import { useAuthStore } from '../../store/authStore';
 import type { AdminUser } from '../../types';
 
@@ -133,6 +133,96 @@ function CreateUserModal({
   );
 }
 
+// ─── Mass Update Tokens Modal ─────────────────────────────────────────────────
+
+function MassUpdateModal({
+  availableModels,
+  onClose,
+  onUpdated,
+}: {
+  availableModels: string[];
+  onClose: () => void;
+  onUpdated: () => void;
+}) {
+  const [modelName, setModelName] = useState(availableModels[0] || '');
+  const [balance, setBalance] = useState('');
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    const bal = parseInt(balance, 10);
+    
+    if (!modelName) { setError('Please select a model.'); return; }
+    if (isNaN(bal) || bal < 0) { setError('Balance must be a non-negative integer.'); return; }
+    
+    setError('');
+    setSubmitting(true);
+    try {
+      await massUpdateTokens({ model_name: modelName, balance: bal });
+      toast.success(`Successfully updated ${modelName} to ${bal.toLocaleString()} for all users.`);
+      onUpdated();
+    } catch (err: unknown) {
+      setError('Failed to update tokens.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <ModalBackdrop onClose={onClose}>
+      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Mass Update Tokens</h2>
+      <form onSubmit={handleSubmit} noValidate className="space-y-3">
+        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Model Name
+          </label>
+          <select
+            value={modelName}
+            onChange={(e) => setModelName(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {availableModels.length === 0 && <option value="" disabled>No models available</option>}
+            {availableModels.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            New Balance (All Users)
+          </label>
+          <input
+            type="number"
+            min={0}
+            value={balance}
+            onChange={(e) => setBalance(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="e.g. 5000"
+          />
+        </div>
+        <div className="flex justify-end gap-2 pt-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={submitting || availableModels.length === 0}
+            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-sm font-medium transition-colors"
+          >
+            {submitting ? 'Updating…' : 'Update All'}
+          </button>
+        </div>
+      </form>
+    </ModalBackdrop>
+  );
+}
+
 // ─── Manage Tokens Modal ──────────────────────────────────────────────────────
 
 function ManageTokensModal({
@@ -228,6 +318,7 @@ export default function AdminDashboard() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showMassUpdateModal, setShowMassUpdateModal] = useState(false);
   const [tokensModal, setTokensModal] = useState<AdminUser | null>(null);
 
   async function fetchUsers(p: number) {
@@ -256,6 +347,10 @@ export default function AdminDashboard() {
     }
   }
 
+  const availableModels = users.length > 0 
+    ? users[0].token_balances.map(b => b.model_name) 
+    : [];
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
@@ -272,13 +367,22 @@ export default function AdminDashboard() {
             <span className="text-gray-300 dark:text-gray-700 select-none">|</span>
             <h1 className="text-base font-semibold text-gray-900 dark:text-white">Admin Dashboard</h1>
           </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
-          >
-            <Plus size={14} />
-            Create User
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowMassUpdateModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
+            >
+              <Layers size={14} />
+              Mass Update
+            </button>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+            >
+              <Plus size={14} />
+              Create User
+            </button>
+          </div>
         </div>
       </div>
 
@@ -413,6 +517,17 @@ export default function AdminDashboard() {
         />
       )}
 
+      {showMassUpdateModal && (
+        <MassUpdateModal
+          availableModels={availableModels}
+          onClose={() => setShowMassUpdateModal(false)}
+          onUpdated={() => {
+            setShowMassUpdateModal(false);
+            fetchUsers(page);
+          }}
+        />
+      )}
+
       {tokensModal !== null && (
         <ManageTokensModal
           user={tokensModal}
@@ -423,5 +538,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-
