@@ -9,8 +9,8 @@ from database import get_db
 from models.user import UserResponse
 from models.auth import RegisterRequest
 from models.chat import ChatItem
-from services.admin import get_all_users_service, delete_user_service, register_user_service, set_user_tokens_service, get_user_details_service, delete_chat_by_id, get_user_chats_service
-from models.user_token_balance import TokenUpdateRequest, TokenBalanceResponse
+from services.admin import get_all_users_service, delete_user_service, register_user_service, set_user_tokens_service, get_user_details_service, delete_chat_by_id, get_user_chats_service, mass_set_user_tokens_service
+from models.user_token_balance import TokenUpdateRequest, TokenBalanceResponse, MassTokenUpdateResponse
 
 router = APIRouter()
 
@@ -38,6 +38,12 @@ async def register_user(request: RegisterRequest, db: AsyncSession = Depends(get
 async def update_user_token_balance(user_id: int, request: TokenUpdateRequest, db: AsyncSession = Depends(get_db), _: str = Depends(require_admin_token)) -> TokenBalanceResponse:
     updated_balance = await set_user_tokens_service(user_id, request.model_name, request.balance, db)
     return updated_balance
+
+@router.patch('/users/tokens', response_model=MassTokenUpdateResponse)
+async def update_multiple_user_token_balances(request: TokenUpdateRequest, db: AsyncSession = Depends(get_db), _: str = Depends(require_admin_token)) -> MassTokenUpdateResponse:
+    updated_balances = await mass_set_user_tokens_service(request, db)
+    return updated_balances
+
 
 @router.get('/users/{user_id}', response_model=UserResponse)
 async def get_user_details(

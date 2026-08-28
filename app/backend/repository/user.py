@@ -38,6 +38,12 @@ class UserRepository:
             .limit(limit)
         )
         return list(result.scalars().all())
+
+    async def get_all_unpaged(self) -> list[User]:
+        result = await self.session.execute(
+            select(User).options(selectinload(User.token_balances))
+        )
+        return list(result.scalars().all())
     
     async def delete(self, user: User) -> None:
         await self.session.delete(user)

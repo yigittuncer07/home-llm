@@ -1,0 +1,25 @@
+info:
+  name: update mass user tokens
+  type: http
+  seq: 8
+
+http:
+  method: PATCH
+  url: "{{base_url}}/admin/users/tokens"
+  body:
+    type: json
+    data: |-
+      {
+        "model_name": "Qwen/Qwen3.5-0.8B",
+        "balance": "5000"
+      }
+  auth:
+    type: bearer
+    token: "{{bearer_token}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: true

@@ -202,3 +202,51 @@ async def test_get_all_users_pagination(client, admin_headers):
     second_page_ids = [u["id"] for u in resp_skip.json()]
     
     assert first_page_ids[1] == second_page_ids[0]
+
+async def test_mass_update_user_tokens(client, admin_headers):
+    # ensure there is at least one model to test against
+    configured_models = list(settings.models_config.keys())
+    if not configured_models:
+        pytest.skip("Test requires at least 1 model in models.yaml")
+    
+    test_model = configured_models[0]
+    new_balance = 7777
+
+    # create a couple of users to ensure multiple records are updated
+    for i in range(2):
+        await client.post(
+            "/admin/users", 
+            headers=admin_headers,
+            json={"email": f"mass_user_{i}@example.com", "password": "password123"}
+        )
+
+    # get the current total user count to verify the response length later
+    users_resp = await client.get("/admin/users", headers=admin_headers)
+    total_users = len(users_resp.json())
+
+    # fire the mass update endpoint
+    patch_resp = await client.patch(
+        "/admin/users/tokens",
+        headers=admin_headers,
+        json={"model_name": test_model, "balance": new_balance}
+    )
+    
+    # assert response structure and values
+    assert patch_resp.status_code == 200
+    data = patch_resp.json()
+    assert "updated_balances" in data
+    
+    updated_balances = data["updated_balances"]
+    assert len(updated_balances) == total_users
+    
+    for balance_record in updated_balances:
+        assert balance_record["model_name"] == test_model
+        assert balance_record["balance"] == new_balance
+
+    # verify persistence by fetching all users again
+    verify_resp = await client.get("/admin/users", headers=admin_headers)
+    for user in verify_resp.json():
+        # find the specific model in the user's padded token balances
+        token = next((t for t in user["token_balances"] if t["model_name"] == test_model), None)
+        assert token is not None
+        assert token["balance"] == new_balance

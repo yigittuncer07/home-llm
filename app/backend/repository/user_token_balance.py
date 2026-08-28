@@ -3,6 +3,7 @@ from sqlalchemy import select, update, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from core.logger import logger
 from models.user_token_balance import UserTokenBalance
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 class UserTokenBalanceRepository:
     def __init__(self, session: AsyncSession):
@@ -61,4 +62,28 @@ class UserTokenBalanceRepository:
             select(UserTokenBalance)
             .where(UserTokenBalance.userId == user_id)
         )
+        return list(result.scalars().all()) 
+
+    async def mass_upsert_balances(self, user_ids: list[int], model_name: str, balance: int) -> list[UserTokenBalance]:
+        if not user_ids:
+            return []
+
+        values = [
+            {"userId": uid, "model_name": model_name, "balance": balance}
+            for uid in user_ids
+        ]
+
+        stmt = pg_insert(UserTokenBalance).values(values)
+        
+        stmt = stmt.on_conflict_do_update(
+            constraint='uq_user_model_balance', 
+            set_=dict(balance=stmt.excluded.balance)
+        ).returning(UserTokenBalance)
+        
+        # populate_existing=True prevents the stale cache bug
+        result = await self.session.execute(
+            stmt.execution_options(populate_existing=True)
+        )
+        await self.session.flush()
+        
         return list(result.scalars().all())
