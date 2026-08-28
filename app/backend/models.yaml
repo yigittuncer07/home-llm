@@ -1,11 +1,17 @@
 models:
-  Qwen/Qwen3.5-0.8B:
-    provider_type: "vllm"
-    api_base: "http://vllm:8001" # make this the same with the .env file LLM_API_BASE
-    max_generation_tokens: 4096 # make sure this is less than the model's max context length. Otherwise there will be no space left for the user prompt and the model will fail to generate a response.
+
+  unsloth/Qwen3.5-0.8B-GGUF:
+    provider_type: "llama_cpp"
+    api_base: "http://llamacpp:8001" # make this the same with the .env file LLM_API_BASE
+    max_generation_tokens: 2024 # make sure this is less than the model's max context length. Otherwise there will be no space left for the user prompt and the model will fail to generate a response.
+
+  # Qwen/Qwen3.5-0.8B:
+  #   provider_type: "vllm"
+  #   api_base: "http://vllm:8001" # make this the same with the .env file LLM_API_BASE
+  #   max_generation_tokens: 2024 # make sure this is less than the model's max context length. Otherwise there will be no space left for the user prompt and the model will fail to generate a response.
     
   # gemini-1.5-pro:
   #   provider_type: "gemini"
   #   api_base: "https://generativelanguage.googleapis.com/v1beta"
   #   api_key_env_var: "GEMINI_API_KEY" 
-  #   max_generation_tokens: 8192
+  #   max_generation_tokens: 2024
