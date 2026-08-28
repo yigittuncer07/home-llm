@@ -70,23 +70,17 @@ services:
 
   vllm:
     image: vllm/vllm-openai:latest
-    profiles:
-      - vllm
-    environment:
-      - LLM_MODEL=${LLM_MODEL}
-      - LLM_MAX_LEN=${LLM_MAX_LEN}
-      - LLM_MAX_SEQS=${LLM_MAX_SEQS}
-      - LLM_PORT=${LLM_PORT}
-      - LLM_GPU_UTIL=${LLM_GPU_UTIL:-0.90}
-      - LLM_QUANTIZATION=${LLM_QUANTIZATION:-}
-      - LLM_ENFORCE_EAGER=${LLM_ENFORCE_EAGER:-}
-    entrypoint: ["/bin/sh", "-c"]
-    command:
-      - |
-        ARGS="--model $$LLM_MODEL --max-model-len $$LLM_MAX_LEN --max-num-seqs $$LLM_MAX_SEQS --gpu-memory-utilization $$LLM_GPU_UTIL --port $$LLM_PORT"
-        if [ -n "$$LLM_QUANTIZATION" ]; then ARGS="$$ARGS --quantization $$LLM_QUANTIZATION --load-format $$LLM_QUANTIZATION"; fi
-        if [ -n "$$LLM_ENFORCE_EAGER" ]; then ARGS="$$ARGS --enforce-eager"; fi
-        exec vllm serve $$ARGS
+    profiles: 
+      - vllm  
+    command: 
+      - --model
+      - ${LLM_MODEL}
+      - --max-model-len
+      - "${LLM_MAX_LEN}"
+      - --max-num-seqs
+      - "${LLM_MAX_SEQS}" 
+      - --port
+      - "${LLM_PORT}"
     ports: # uncomment if you dont want the LLM service accesible outside the docker network
       - "${LLM_PORT}:${LLM_PORT}"
     volumes:
