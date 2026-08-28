@@ -32,6 +32,9 @@ class TokenBalanceResponse(BaseModel):
 
     model_config = {"from_attributes": True}
 
+class MassTokenUpdateResponse(BaseModel):
+    updated_balances: list[TokenBalanceResponse]
+
 class UserTokenBalanceItem(BaseModel):
     model_name: str
     balance: int

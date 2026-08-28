@@ -2,14 +2,13 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from repository.chat import ChatRepository
-from models.chat import ChatDeleteResponse, ChatItem
-from core.exceptions import PermissionDeniedError
+from models.chat import ChatItem
 from auth.security import hash_password
 from repository.user import UserRepository, User
 from models.user import UserResponse
 from core.exceptions import ChatNotFoundError, UserAlreadyExistsError, UserNotFoundError
 from repository.user_token_balance import UserTokenBalanceRepository
-from models.user_token_balance import TokenBalanceResponse
+from models.user_token_balance import MassTokenUpdateResponse, TokenBalanceResponse, TokenUpdateRequest
 from core.logger import logger
 from core.helpers import backfill_token_balances
 
@@ -62,6 +61,26 @@ async def set_user_tokens_service(user_id: int, model_name: str, balance: int, s
     logger.info(f"Set token balance for user {user_id} on model {model_name} to {balance}.")
     
     return TokenBalanceResponse.model_validate(record)
+
+async def mass_set_user_tokens_service(updates: TokenUpdateRequest, session: AsyncSession) -> MassTokenUpdateResponse:
+    user_repository = UserRepository(session)
+    token_repo = UserTokenBalanceRepository(session)
+    
+    all_users = await user_repository.get_all_unpaged()
+    user_ids = [user.id for user in all_users]
+    
+    updated_records = await token_repo.mass_upsert_balances(
+        user_ids=user_ids, 
+        model_name=updates.model_name, 
+        balance=updates.balance
+    )
+    
+    return MassTokenUpdateResponse(
+        updated_balances=[
+            TokenBalanceResponse.model_validate(record) 
+            for record in updated_records
+        ]
+    )
 
 async def get_all_users_service(skip: int, limit: int, session: AsyncSession) -> list[UserResponse]:
     user_repository = UserRepository(session)
